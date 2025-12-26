@@ -1,0 +1,11 @@
+name: citm-mk-devcerts
+services:
+  maker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - /bin/bash
+      - /shared-certificates/mk-devcerts.sh
+    volumes:
+      - ./:/shared-certificates

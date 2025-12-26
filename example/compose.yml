@@ -1,0 +1,32 @@
+name: citm-example
+services:
+  cert-maker:
+    build:
+      context: ../shared-certificates
+      dockerfile: Dockerfile
+    volumes:
+      - ../shared-certificates:/shared-certificates
+    command:
+      - /bin/bash
+      - /shared-certificates/mk-devcerts.sh
+  citm:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    volumes:
+      - ./caddy-conf.d:/etc/caddy/conf.d:ro
+      - ./dnsmasq-conf.d:/etc/dnsmasq-user.d:ro
+      - ./mitm-scripts:/mitm-scripts:ro
+      - ../shared-certificates/certs:/certs:ro
+    depends_on:
+      cert-maker:
+        condition: service_completed_successfully
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+  nginx:
+    image: nginx
+    ports:
+      # This is to simulate something running on port 8000 on the host machine
+      - "8000:80"

@@ -1,0 +1,24 @@
+localhost {
+	# Enable on-demand TLS for this site configuration
+	import dev_certs
+
+	reverse_proxy {
+		# This can be anything but localhost, so that the request goes through MITMProxy
+		to mitm
+
+		# Flow marker for MITMProxy to be able to distinguish flows easier
+		header_up X-MITM-Emoji ":gear:"
+		# Target host. Note that localhost resovles to host-gateway/host.docker.internal
+		header_up X-MITM-To "localhost:8000"
+
+		# Common Caddy reverse proxy configuration
+		header_up Host "localhost:80"
+		header_up X-Forwarded-Host "localhost:80"
+
+		# Uncomment when the upstream server is using TLS
+		# import tls_transport
+
+		# Uncomment to disable forwarding to MITMProxy
+		# proxy_off
+	}
+}

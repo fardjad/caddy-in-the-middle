@@ -1,0 +1,63 @@
+{
+	default_bind 0.0.0.0
+
+	admin off
+
+	log {
+		format json
+		output stderr
+	}
+
+	skip_install_trust
+
+	pki {
+		ca citm {
+			root {
+				cert /certs/rootCA.pem
+				key /certs/rootCA-key.pem
+			}
+		}
+	}
+}
+
+(dev_certs) {
+	tls {
+		on_demand
+		issuer internal {
+			ca citm
+		}
+	}
+}
+
+(tls_transport) {
+	transport http {
+		tls
+		tls_insecure_skip_verify
+	}
+}
+
+(proxy_off) {
+	transport http {
+		network_proxy none
+	}
+}
+
+*.citm.localhost {
+	import dev_certs
+	@mitm host mitm.citm.localhost
+	handle @mitm {
+		reverse_proxy {
+			to 127.0.0.1:8381
+			import proxy_off
+
+			@forbidden status 403
+			handle_response @forbidden {
+				redir * /?token=secret
+			}
+		}
+	}
+	# optional fallback for unmatched subdomains
+	respond "Unknown service" 404
+}
+
+import /etc/caddy/conf.d/*
