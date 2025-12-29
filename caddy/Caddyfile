@@ -44,6 +44,7 @@
 
 *.citm.localhost {
 	import dev_certs
+
 	@mitm host mitm.citm.localhost
 	handle @mitm {
 		reverse_proxy {
@@ -56,6 +57,23 @@
 			}
 		}
 	}
+
+	@utils host utils.citm.localhost
+	handle @utils {
+		reverse_proxy {
+			to 127.0.0.1:5000
+			import proxy_off
+		}
+	}
+
+	@supervisor host supervisor.citm.localhost
+	handle @supervisor {
+		reverse_proxy {
+			to 127.0.0.1:9001
+			import proxy_off
+		}
+	}
+
 	# optional fallback for unmatched subdomains
 	respond "Unknown service" 404
 }

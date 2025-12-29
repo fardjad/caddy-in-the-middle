@@ -36,6 +36,9 @@ supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 [supervisorctl]
 serverurl=unix:///var/run/supervisor.sock
 
+[inet_http_server]
+port=0.0.0.0:9001
+
 [include]
 files = /etc/supervisor/conf.d/*.conf
 EOF
@@ -94,6 +97,11 @@ EOF
 
 # MITM Proxy
 
+RUN <<EOF
+pip3 install flask --root-user-action=ignore
+pip3 install gunicorn --root-user-action=ignore
+EOF
+
 RUN mkdir -p /root/.mitmproxy
 COPY --chown=root:root --chmod=755 ./mitmproxy/start-mitmproxy.sh /usr/local/bin/start-mitmproxy
 COPY ./mitmproxy/rewrite-host.py /rewrite-host.py
@@ -133,6 +141,26 @@ if [ ! -f /certs/rootCA-key.pem ]; then
 fi
 
 exec supervisord "\$@"
+EOF
+
+# CITM Utils
+COPY citm-utils /citm-utils
+
+COPY <<EOF /etc/supervisor/conf.d/citm-utils.conf
+[program:citm-utils]
+directory=/citm-utils
+command=python3 -m gunicorn -w 1 -b 0.0.0.0:5000 app:app
+autostart=true
+autorestart=true
+startretries=3
+user=root
+
+stdout_logfile=/dev/fd/1
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/fd/2
+stderr_logfile_maxbytes=0
+
+stopsignal=TERM
 EOF
 
 CMD [ "/start-supervisord" ]

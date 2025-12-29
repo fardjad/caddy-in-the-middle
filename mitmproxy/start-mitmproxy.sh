@@ -10,7 +10,11 @@ if [ -d "/mitm-scripts" ]; then
   SCRIPT_ARGS+=" $(ls /mitm-scripts/*.py | sort | awk '{print "-s "$1}')"
 fi
 
+mkdir -p /mitm-dump
+
 mitmweb \
+  -w /mitm-dump/dump.flow \
+  --set ssl_insecure=true \
   --set listen_port=8380 \
   --set web_port=8381 \
   --set web_password=secret \

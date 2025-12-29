@@ -18,6 +18,7 @@ services:
       - ./dnsmasq-conf.d:/etc/dnsmasq-user.d:ro
       - ./mitm-scripts:/mitm-scripts:ro
       - ../shared-certificates/certs:/certs:ro
+      - ./mitm-dump:/mitm-dump
     depends_on:
       cert-maker:
         condition: service_completed_successfully
@@ -25,8 +26,64 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
-  nginx:
-    image: nginx
+  service1:
+    init: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      cert-maker:
+        condition: service_completed_successfully
+    volumes:
+      - ../shared-certificates/certs:/certs:ro
+    extra_hosts:
+      - "service2.internal:host-gateway"
+    command:
+      - "-w"
+      - "4"
+      - "-b"
+      - "0.0.0.0:5031"
+      - "service1:app"
     ports:
-      # This is to simulate something running on port 8000 on the host machine
-      - "8000:80"
+      # This is to simulate something running on port 5031 on the host machine
+      - "5031:5031"
+  service2:
+    init: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      cert-maker:
+        condition: service_completed_successfully
+    volumes:
+      - ../shared-certificates/certs:/certs:ro
+    extra_hosts:
+      - "service3.internal:host-gateway"
+    command:
+      - "-w"
+      - "4"
+      - "-b"
+      - "0.0.0.0:5032"
+      - "service2:app"
+    ports:
+      # This is to simulate something running on port 5032 on the host machine
+      - "5032:5032"
+  service3:
+    init: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      cert-maker:
+        condition: service_completed_successfully
+    volumes:
+      - ../shared-certificates/certs:/certs:ro
+    command:
+      - "-w"
+      - "4"
+      - "-b"
+      - "0.0.0.0:5033"
+      - "service3:app"
+    ports:
+      # This is to simulate something running on port 5032 on the host machine
+      - "5033:5033"
