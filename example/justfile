@@ -1,0 +1,37 @@
+# Show this message
+help:
+    @just --list
+    
+[no-cd]
+_start-stack:
+    #!/usr/bin/env bash
+
+    docker network inspect citm-example >/dev/null 2>&1 || docker network create citm-example
+    docker compose up -d --build --force-recreate --remove-orphans
+    
+start: (start-gw) (start-service1)
+
+start-gw:
+    #!/usr/bin/env bash
+    
+    set -euo pipefail
+    cd gw
+    just _start-stack
+    
+start-service1:
+    #!/usr/bin/env bash
+    
+    set -euo pipefail
+    cd service1
+    just _start-stack
+ 
+clean:
+    #!/usr/bin/env bash
+
+    set -euo pipefail
+    
+    for d in gw service1; do
+        pushd "$d"
+        docker compose down --volumes --remove-orphans
+        popd
+    done

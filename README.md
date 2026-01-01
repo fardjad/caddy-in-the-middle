@@ -34,76 +34,17 @@ Caddy in the Middle provides the following capabilities:
 
 - **Preconfigured Reverse Proxy with Traffic Capture** - Leverages Caddy as a reverse proxy and integrates mitmproxy for automatic traffic capture and inspection.
 
-- **Developer-Friendly Networking** - `.localhost` domain resolves to the host machine IP address despite running in containers.
-
 - **Traffic Visualization Tools** [In Progress] - Visual tools for understanding service communication patterns.
 
 - **Lightweight Mocking Framework** [In Progress] - Built on top of mitmproxy for flexible endpoint mocking.
 
 ## Usage
 
-The recommended deployment method is via Docker Compose:
-
-```yaml
-# compose.yml for Caddy in the Middle
-services:
-  citm:
-    image: fardjad/citm:latest
-    volumes:
-      # User provided Caddy config files
-      - ./caddy-conf.d:/etc/caddy/conf.d:ro
-      # User provided MITMProxy scripts
-      - ./mitm-scripts:/mitm-scripts:ro
-      # The directory containing the rootCA and the key for on-demand TLS
-      - ../shared-certificates/certs:/certs:ro
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-```
-
-## Example Configuration
-
-Create a file named `example.Caddyfile` in your `./conf.d` directory to define 
-routing rules:
-
-```caddyfile
-example.localhost {
-	# Enable on-demand TLS certificate generation for this site
-	import dev_certs
-	
-	reverse_proxy {
-		# Ignored unless proxy is disabled with proxy_off macro
-    # This must not be 'localhost' to ensure traffic routes through mitmproxy
-		to mitm
-
-		# Upstream target host (localhost resolves to host-gateway/host.docker.internal in containers)
-		header_up X-MITM-To "localhost:8000"
-		
-		# Visual marker for easier flow identification in mitmproxy UI
-		header_up X-MITM-Emoji ":gear:"
-		
-		# Standard reverse proxy headers
-		header_up Host "example.localhost:80"
-		header_up X-Forwarded-Host "example.localhost:80"
-		
-		# Uncomment when upstream server uses TLS
-		# import tls_transport
-		
-		# Uncomment to bypass mitmproxy and connect directly to upstream
-		# proxy_off
-	}
-}
-```
-
-This configuration:
-
-- Enables automatic HTTPS for `example.localhost`
-- Routes all traffic through mitmproxy for inspection
-- Forwards requests to a service running on the host machine at port 8000
-- Tags traffic with a visual emoji marker (`:gear:`) for easy identification in mitmproxy
-- Sets appropriate headers for proper reverse proxying
-
-The `X-MITM-To` header tells the system where to forward the request after 
-inspection, while `localhost` inside the Caddy in the Middle container 
-automatically resolves to the host machine.
+TODO: rewrite in a user-friendly way
+1. Add CITM to all services (side-car pattern, use the CITM service network for all other containers)
+    1. Add the CITM container
+    2. Mount the Docker socket (`/var/run/docker.sock:/var/run/docker.sock:ro`)
+    3. Define the service names for containers with labels (e.g. `citm_name=service1.internal`)
+2. Make sure CITM containers are part of the same network:
+    1. One docker compose project with multiple containers
+    2. Multiple docker compose projects all attached to a shared external isolated network

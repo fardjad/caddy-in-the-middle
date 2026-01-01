@@ -7,6 +7,12 @@ RUN xcaddy build \
 
 FROM mitmproxy/mitmproxy
 
+# Common tools
+RUN <<EOF
+apt-get update -y
+apt-get install -y socat curl iputils-ping ca-certificates
+EOF
+
 # Supervisord
 RUN <<EOF
 apt-get update -y
@@ -50,7 +56,7 @@ COPY ./caddy/Caddyfile /etc/caddy/Caddyfile
 
 COPY <<EOF /etc/supervisor/conf.d/caddy.conf
 [program:caddy]
-command=/usr/bin/caddy run --watch --config /etc/caddy/Caddyfile --adapter caddyfile
+command=/usr/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
 environment=HTTP_PROXY="http://127.0.0.1:8380",HTTPS_PROXY="http://127.0.0.1:8380"
 autostart=true
 autorestart=true
@@ -97,11 +103,6 @@ EOF
 
 # MITM Proxy
 
-RUN <<EOF
-pip3 install flask --root-user-action=ignore
-pip3 install gunicorn --root-user-action=ignore
-EOF
-
 RUN mkdir -p /root/.mitmproxy
 COPY --chown=root:root --chmod=755 ./mitmproxy/start-mitmproxy.sh /usr/local/bin/start-mitmproxy
 COPY ./mitmproxy/rewrite-host.py /rewrite-host.py
@@ -110,6 +111,50 @@ COPY <<EOF /etc/supervisor/conf.d/mitmproxy.conf
 [program:mitmproxy]
 directory=/root/.mitmproxy
 command=/usr/bin/script -q -c "/usr/local/bin/start-mitmproxy" /dev/null
+autostart=true
+autorestart=true
+startretries=3
+user=root
+
+stdout_logfile=/dev/fd/1
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/fd/2
+stderr_logfile_maxbytes=0
+
+stopsignal=TERM
+EOF
+
+# CITM Utils
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+COPY citm-utils /citm-utils
+WORKDIR /citm-utils
+
+RUN <<EOF
+rm -rf .venv __pycache__
+uv sync
+EOF
+
+COPY <<EOF /etc/supervisor/conf.d/citm-utils.conf
+[program:citm-utils-web]
+directory=/citm-utils
+command=uv run gunicorn -w 1 -b 0.0.0.0:5000 --enable-stdio-inheritance app:app
+autostart=true
+autorestart=true
+startretries=3
+user=root
+
+stdout_logfile=/dev/fd/1
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/fd/2
+stderr_logfile_maxbytes=0
+
+stopsignal=TERM
+
+[program:citm-utils-dnsmasq-updater]
+directory=/citm-utils
+command=uv run python dnsmasq-updater.py
 autostart=true
 autorestart=true
 startretries=3
@@ -140,27 +185,10 @@ if [ ! -f /certs/rootCA-key.pem ]; then
     exit 1
 fi
 
+install -m 644 -o root -g root "/certs/rootCA.pem" /usr/local/share/ca-certificates/citm-root-ca.crt
+update-ca-certificates
+
 exec supervisord "\$@"
-EOF
-
-# CITM Utils
-COPY citm-utils /citm-utils
-
-COPY <<EOF /etc/supervisor/conf.d/citm-utils.conf
-[program:citm-utils]
-directory=/citm-utils
-command=python3 -m gunicorn -w 1 -b 0.0.0.0:5000 app:app
-autostart=true
-autorestart=true
-startretries=3
-user=root
-
-stdout_logfile=/dev/fd/1
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/fd/2
-stderr_logfile_maxbytes=0
-
-stopsignal=TERM
 EOF
 
 CMD [ "/start-supervisord" ]

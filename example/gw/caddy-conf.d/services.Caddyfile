@@ -1,0 +1,51 @@
+# gateway citm
+*.citm.localhost {
+	import dev_certs
+
+	reverse_proxy {
+		to "{labels.2}.citm.localhost:3858"
+
+		transport http {
+			tls
+			network_proxy none
+		}
+	}
+}
+
+# services citm
+*.citm.service1.localhost {
+	import dev_certs
+
+	reverse_proxy {
+		to "{labels.1}.internal:3858"
+
+		header_up Host "{labels.3}.citm.localhost:3858"
+
+		transport http {
+			tls
+			tls_server_name citm.localhost
+			network_proxy none
+		}
+	}
+}
+
+alt-service1.localhost, service1.localhost {
+	# Enable on-demand TLS for this site configuration
+	import dev_certs
+
+	reverse_proxy {
+		# This can be anything but localhost, so that the request goes through MITMProxy
+		to mitm
+
+		# Flow marker for MITMProxy to be able to distinguish flows easier
+		header_up X-MITM-Emoji ":one:"
+		header_up X-MITM-To "service1.internal:443"
+
+		# Common Caddy reverse proxy configuration
+		header_up Host "service1.internal"
+
+		transport http {
+			tls
+		}
+	}
+}

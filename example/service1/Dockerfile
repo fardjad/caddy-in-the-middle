@@ -7,8 +7,9 @@ EOF
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY ./services /services
-WORKDIR /services
+RUN mkdir /app
+WORKDIR /app
+COPY .python-version uv.lock pyproject.toml app.py ./
 
 RUN uv sync
 
@@ -20,7 +21,7 @@ set -euo pipefail
 install -m 644 -o root -g root "/certs/rootCA.pem" /usr/local/share/ca-certificates/citm-root-ca.crt
 update-ca-certificates
 
-exec uv run gunicorn "\$@"
+exec uv run gunicorn -w 4 -b 0.0.0.0:5031 app:app
 EOF
 
 ENTRYPOINT [ "/entrypoint.sh" ]

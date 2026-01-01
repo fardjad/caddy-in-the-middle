@@ -29,52 +29,45 @@
 	}
 }
 
-(tls_transport) {
-	transport http {
-		tls
-		tls_insecure_skip_verify
-	}
-}
-
-(proxy_off) {
-	transport http {
-		network_proxy none
-	}
-}
-
-*.citm.localhost {
+https://citm.internal:3858, https://*.citm.internal:3858, https://citm.localhost:3858 https://*.citm.localhost:3858 {
+	log
 	import dev_certs
 
-	@mitm host mitm.citm.localhost
+	@mitm `{host}.startsWith("mitm.citm.")`
 	handle @mitm {
 		reverse_proxy {
 			to 127.0.0.1:8381
-			import proxy_off
+			header_up Authorization "Bearer secret"
+			header_up -Origin
 
-			@forbidden status 403
-			handle_response @forbidden {
-				redir * /?token=secret
+			transport http {
+				network_proxy none
 			}
 		}
 	}
 
-	@utils host utils.citm.localhost
-	handle @utils {
-		reverse_proxy {
-			to 127.0.0.1:5000
-			import proxy_off
-		}
-	}
-
-	@supervisor host supervisor.citm.localhost
+	@supervisor `{host}.startsWith("supervisor.citm.")`
 	handle @supervisor {
 		reverse_proxy {
 			to 127.0.0.1:9001
-			import proxy_off
+
+			transport http {
+				network_proxy none
+			}
 		}
 	}
 
-	# optional fallback for unmatched subdomains
+	@utils `{host}.startsWith("utils.citm.")`
+	handle @utils {
+		reverse_proxy {
+			to 127.0.0.1:5000
+
+			transport http {
+				network_proxy none
+			}
+		}
+	}
+	
 	respond "Unknown service" 404
 }
 

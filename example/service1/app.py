@@ -5,7 +5,11 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-
 @app.route("/", methods=["GET"])
 def get_info():
-    return jsonify({"name": "service3"}), 200
+    return (
+        jsonify(
+            {"status": "ok"}
+        ),
+        200,
+    )

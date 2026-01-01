@@ -1,0 +1,16 @@
+service1.internal, alt-service1.internal {
+	# Enable on-demand TLS for this site configuration
+	import dev_certs
+
+	reverse_proxy {
+		# This can be anything but localhost, so that the request goes through MITMProxy
+		to mitm
+
+		# Flow marker for MITMProxy to be able to distinguish flows easier
+		header_up X-MITM-Emoji ":one:"
+		header_up X-MITM-To "localhost:5031"
+
+		# Common Caddy reverse proxy configuration
+		header_up Host "service1.localhost:5031"
+	}
+}
