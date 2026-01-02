@@ -7,7 +7,7 @@ _start-stack:
     #!/usr/bin/env bash
 
     docker network inspect citm-example >/dev/null 2>&1 || docker network create citm-example
-    docker compose up -d --build --force-recreate --remove-orphans
+    docker compose up --wait -d --build --force-recreate --remove-orphans
 
 start: start-gw start-service1
 

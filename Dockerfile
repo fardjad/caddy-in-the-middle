@@ -163,7 +163,7 @@ EOF
 COPY <<EOF /etc/supervisor/conf.d/citm-utils.conf
 [program:citm-utils-web]
 directory=/citm-utils
-command=uv run gunicorn -w 1 -b 0.0.0.0:5000 --enable-stdio-inheritance app:app
+command=uv run gunicorn -w 4 -b 0.0.0.0:5000 --enable-stdio-inheritance app:app
 autostart=true
 autorestart=true
 startretries=3
@@ -219,5 +219,11 @@ RUN chmod 755 /start-supervisord
 
 COPY --from=setup-devenv /setup-devenv.sh /setup-devenv.sh
 RUN /bin/bash /setup-devenv.sh && rm /setup-devenv.sh
+
+HEALTHCHECK --interval=5s --timeout=5s --start-period=5s --retries=60 \
+  CMD curl -fsS \
+      --connect-timeout 3 \
+      https://utils.citm.internal:3858/health \
+      || exit 1
 
 CMD ["/start-supervisord"]
