@@ -34,9 +34,9 @@ Caddy in the Middle provides the following capabilities:
 
 - **Preconfigured Reverse Proxy with Traffic Capture** - Leverages Caddy as a reverse proxy and integrates mitmproxy for automatic traffic capture and inspection.
 
-- **Traffic Visualization Tools** [In Progress] - Visual tools for understanding service communication patterns.
+- **Lightweight Mocking Framework** - Built on top of mitmproxy for flexible endpoint mocking.
 
-- **Lightweight Mocking Framework** [In Progress] - Built on top of mitmproxy for flexible endpoint mocking.
+- **Traffic Visualization Tools** [In Progress] - Visual tools for understanding service communication patterns.
 
 ## Usage
 

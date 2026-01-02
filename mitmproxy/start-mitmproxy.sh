@@ -5,7 +5,7 @@ set -euo pipefail
 cat /certs/rootCA-key.pem /certs/rootCA.pem > /root/.mitmproxy/mitmproxy-ca.pem
 chmod -R 644 /root/.mitmproxy/*
 
-SCRIPT_ARGS="-s /rewrite-host.py"
+SCRIPT_ARGS="-s /mock-responder.py -s /rewrite-host.py"
 if [ -d "/mitm-scripts" ]; then
   SCRIPT_ARGS+=" $(ls /mitm-scripts/*.py | sort | awk '{print "-s "$1}')"
 fi

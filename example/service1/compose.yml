@@ -25,9 +25,12 @@ services:
       - citm_dns_names=service1.internal,alt-service1.internal
     networks:
       - citm-example
+    environment:
+      - MOCK_PATHS=/citm-mocks/**/*.mako
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./caddy-conf.d:/etc/caddy/conf.d:ro
+      - ./citm-mocks:/citm-mocks:ro
       - ../../shared-certificates/certs:/certs:ro
   service1:
     build:
