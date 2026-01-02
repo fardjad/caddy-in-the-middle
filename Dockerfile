@@ -1,5 +1,24 @@
 # syntax=docker/dockerfile:1
 
+FROM alpine AS setup-devenv
+
+ARG DEVCONTAINER="false"
+
+COPY .devcontainer/setup-devenv.sh /setup-devenv.sh
+
+COPY <<EOF /setup-devenv-noop.sh
+#!/usr/bin/env bash
+
+echo "This image is built without development tools."
+echo "To install development tools, build the image with DEVCONTAINER=true build argument."
+EOF
+
+RUN /bin/ash <<EOF
+if [ "${DEVCONTAINER}" == "false" ]; then
+    cp /setup-devenv-noop.sh /setup-devenv.sh
+fi
+EOF
+
 FROM caddy:2-builder AS caddy-builder
 
 RUN xcaddy build \
@@ -198,71 +217,7 @@ EOF
 
 RUN chmod 755 /start-supervisord
 
-ARG DEVCONTAINER=false
-RUN /bin/bash <<EOF
-if [ "${DEVCONTAINER}" != "false" ]; then
-
-  chsh -s /bin/zsh \$USERNAME
-
-  apt-get install -y \
-    build-essential \
-    git \
-    git-lfs \
-    golang \
-    jq \
-    neovim \
-    tmux \
-    vim \
-    zsh
-
-  uv tool install black
-  uv tool install rust-just
-
-  # Go tools
-  go install github.com/google/yamlfmt/cmd/yamlfmt@latest
-  go install github.com/reteps/dockerfmt@latest
-
-  # Node.js 24.x
-  curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
-  apt-get update
-  apt-get install -y --no-install-recommends nodejs
-
-  npm install -g dclint
-
-  # starship
-  curl -fsSL https://starship.rs/install.sh -o /tmp/install_starship.sh
-  chmod +x /tmp/install_starship.sh
-  /tmp/install_starship.sh -y
-  rm -f /tmp/install_starship.sh
-  
-  # Docker
-  install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-  chmod a+r /etc/apt/keyrings/docker.asc
-  
-  tee /etc/apt/sources.list.d/docker.sources <<INEOF
-Types: deb
-URIs: https://download.docker.com/linux/debian
-Suites: \$(. /etc/os-release && echo "\$VERSION_CODENAME")
-Components: stable
-Signed-By: /etc/apt/keyrings/docker.asc
-INEOF
-
-apt-get update -y
-apt-get install -y docker-ce-cli docker-buildx-plugin docker-compose-plugin
-
-  cat > "\$HOME/.zshrc" <<'INEOF'
-export PATH="\$HOME/.local/bin:\$HOME/go/bin:\$PATH"
-
-mkdir -p "\$HOME/.zsh/completion"
-just --completions=zsh > "\$HOME/.zsh/completion/_just"
-
-fpath=("\$HOME/.zsh/completion" \$fpath)
-autoload -U compinit
-compinit
-eval "\$(starship init zsh)"
-INEOF
-fi
-EOF
+COPY --from=setup-devenv /setup-devenv.sh /setup-devenv.sh
+RUN /bin/bash /setup-devenv.sh && rm /setup-devenv.sh
 
 CMD ["/start-supervisord"]
