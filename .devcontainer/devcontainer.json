@@ -3,13 +3,6 @@
   "dockerComposeFile": "./compose.yml",
   "workspaceFolder": "/workspace",
   "service": "devcontainer",
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "configureZshAsDefaultShell": true
-    },
-    "ghcr.io/devcontainers/features/git:1": {}
-  },
   "runServices": [
     "devcontainer",
     "docker-socket-proxy"
