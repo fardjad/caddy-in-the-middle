@@ -5,6 +5,7 @@ import subprocess
 
 docker_client = docker.from_env()
 
+
 def debounce(wait_seconds):
     def decorator(fn):
         timer = None
@@ -31,12 +32,9 @@ def debounce(wait_seconds):
 
 def get_citm_dns_entries():
     containers = docker_client.containers.list(
-        all=False,
-        filters={
-            "label": ["citm_network","citm_dns_names"]
-        }
+        all=False, filters={"label": ["citm_network", "citm_dns_names"]}
     )
-    
+
     def to_dns_entries(container):
         network_name = container.labels.get("citm_network")
         if not network_name:
@@ -62,6 +60,7 @@ def get_citm_dns_entries():
         for name, ip in to_dns_entries(container).items()
     }
 
+
 def citm_dns_entries_to_dnsmasq_config(citm_dns_entries: dict[str, str]):
     lines = []
     for hostname, ip in citm_dns_entries.items():
@@ -77,6 +76,7 @@ def update_dnsmasq_config():
         f.write(config)
     subprocess.call(["supervisorctl", "signal", "SIGHUP", "dnsmasq"])
 
+
 def watch_container_lifecycle(callback: function):
     api = docker_client.api
 
@@ -84,7 +84,7 @@ def watch_container_lifecycle(callback: function):
         for event in api.events(decode=True):
             if event["Type"] != "container":
                 continue
-            
+
             if event["Action"] not in set(["start", "stop"]):
                 continue
 
@@ -93,6 +93,7 @@ def watch_container_lifecycle(callback: function):
         print("\nExiting...")
     finally:
         api.close()
+
 
 if __name__ == "__main__":
     try:

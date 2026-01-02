@@ -5,6 +5,7 @@ import socket
 
 app = Flask(__name__)
 
+
 @app.route("/", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
 def get_info():
     request_data = {
@@ -16,10 +17,11 @@ def get_info():
         "args": request.args.to_dict(flat=False),
         "cookies": request.cookies,
     }
-    return jsonify({
-        "hostname": socket.gethostname(),
-        "request_data": request_data
-    }), 200
+    return (
+        jsonify({"hostname": socket.gethostname(), "request_data": request_data}),
+        200,
+    )
+
 
 @app.route("/har", methods=["GET"])
 def get_har():

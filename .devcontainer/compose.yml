@@ -6,42 +6,44 @@ services:
     build:
       context: ../shared-certificates
       dockerfile: Dockerfile
+    volumes:
+      - ../shared-certificates:/shared-certificates
     command:
       - /bin/bash
       - /shared-certificates/mk-devcerts.sh
-    volumes:
-      - ../shared-certificates:/shared-certificates
   devcontainer:
     build:
       context: ..
       dockerfile: Dockerfile
-    command: /start-supervisord
+      args:
+        DEVCONTAINER: true
     depends_on:
       cert-maker:
         condition: service_completed_successfully
-    environment:
-      - DOCKER_HOST=tcp://localhost:2375
-    init: true
-    ports:
-      - '80:80'
-      - '443:443'
-      - 443:443/udp
-      - '3858:3858'
-    tty: true
     volumes:
       - vscode-server-data:/home/dev/.vscode-server
       - ../shared-certificates/certs:/certs:ro
       - ../example/gw/caddy-conf.d:/etc/caddy/conf.d:ro
       - ../caddy/Caddyfile:/etc/caddy/Caddyfile
       - ..:/workspace:cached
+    environment:
+      - DOCKER_HOST=tcp://localhost:2375
+    ports:
+      - '127.0.0.1:80:80'
+      - '127.0.0.1:443:443'
+      - '127.0.0.1:443:443/udp'
+      - '127.0.0.1:3858:3858'
+    command: /start-supervisord
+    init: true
+    tty: true
   docker-socket-proxy:
+    image: alpine/socat:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    network_mode: service:devcontainer
     command:
       - TCP-LISTEN:2375,fork,reuseaddr
       - UNIX-CONNECT:/var/run/docker.sock
-    image: alpine/socat
-    network_mode: service:devcontainer
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   vscode-server-data:

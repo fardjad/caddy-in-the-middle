@@ -1,18 +1,15 @@
 ---
 name: citm-example-service1
-networks:
-  citm-example:
-    external: true
 services:
   cert-maker:
     build:
       context: ../../shared-certificates
       dockerfile: Dockerfile
+    volumes:
+      - ../../shared-certificates:/shared-certificates
     command:
       - /bin/bash
       - /shared-certificates/mk-devcerts.sh
-    volumes:
-      - ../../shared-certificates:/shared-certificates
   citm:
     build:
       context: ../..
@@ -20,18 +17,18 @@ services:
     depends_on:
       cert-maker:
         condition: service_completed_successfully
-    labels:
-      - citm_network=citm-example
-      - citm_dns_names=service1.internal,alt-service1.internal
-    networks:
-      - citm-example
-    environment:
-      - MOCK_PATHS=/citm-mocks/**/*.mako
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./caddy-conf.d:/etc/caddy/conf.d:ro
       - ./citm-mocks:/citm-mocks:ro
       - ../../shared-certificates/certs:/certs:ro
+    environment:
+      - MOCK_PATHS=/citm-mocks/**/*.mako
+    networks:
+      - citm-example
+    labels:
+      - citm_network=citm-example
+      - citm_dns_names=service1.internal,alt-service1.internal
   service1:
     build:
       context: .
@@ -39,7 +36,10 @@ services:
     depends_on:
       cert-maker:
         condition: service_completed_successfully
-    init: true
-    network_mode: service:citm
     volumes:
       - ../../shared-certificates/certs:/certs:ro
+    network_mode: service:citm
+    init: true
+networks:
+  citm-example:
+    external: true

@@ -20,7 +20,8 @@
         "redhat.vscode-yaml",
         "ms-azuretools.vscode-docker",
         "ms-python.black-formatter",
-        "matthewpi.caddyfile-support"
+        "matthewpi.caddyfile-support",
+        "nefrob.vscode-just-syntax"
       ]
     }
   },

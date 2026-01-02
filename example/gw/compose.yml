@@ -5,11 +5,11 @@ services:
     build:
       context: ../../shared-certificates
       dockerfile: Dockerfile
+    volumes:
+      - ../../shared-certificates:/shared-certificates
     command:
       - /bin/bash
       - /shared-certificates/mk-devcerts.sh
-    volumes:
-      - ../../shared-certificates:/shared-certificates
   citm:
     build:
       context: ../..
@@ -17,16 +17,16 @@ services:
     depends_on:
       cert-maker:
         condition: service_completed_successfully
-    networks:
-      - citm-example
     volumes:
       - ./caddy-conf.d:/etc/caddy/conf.d:ro
       - ../../shared-certificates/certs:/certs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - '127.0.0.1:80:80'
+      - '127.0.0.1:443:443'
+      - '127.0.0.1:443:443/udp'
+    networks:
+      - citm-example
 
 networks:
   citm-example:

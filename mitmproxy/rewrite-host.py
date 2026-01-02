@@ -14,7 +14,7 @@ class RewriteHost:
 
         pretty_host = flow.request.pretty_host
         flow.comment = f"Rewriting host {pretty_host} -> {to}"
-        
+
         flow.server_conn.sni = pretty_host
 
         host_header = f"{pretty_host}:{flow.request.port}"
@@ -23,5 +23,6 @@ class RewriteHost:
         for h in flow.request.headers.keys():
             if h.lower() == "host":
                 flow.request.headers[h] = host_header
-        
+
+
 addons = [RewriteHost()]

@@ -24,7 +24,7 @@ mkdir -p /var/run
 mkdir -p /etc/supervisor/conf.d
 EOF
 
-COPY --chown=root:root --chmod=644 <<EOF /etc/supervisor/supervisord.conf
+COPY <<EOF /etc/supervisor/supervisord.conf
 ; supervisor config file
 
 [unix_http_server]
@@ -76,7 +76,7 @@ RUN <<EOF
 apt-get update -y
 apt-get install -y dnsmasq
 mkdir -p /etc/default
-echo "CONFIG_DIR=/etc/dnsmasq.d,.dpkg-dist,.dpkg-old,.dpkg-new\nIGNORE_RESOLVCONF=yes" > /etc/default/dnsmasq
+echo "CONFIG_DIR=/etc/dnsmasq.d,.dpkg-dist,.dpkg-old,.dpkg-new\nIGNORE_RESOLVCONF=yes" >/etc/default/dnsmasq
 rm -f /etc/dnsmasq.conf
 rm -rf /etc/dnsmasq.d
 mkdir -p /etc/dnsmasq.d /etc/dnsmasq-user.d
@@ -130,7 +130,7 @@ EOF
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 RUN <<EOF
-pip3 install mako --root-user-action ignore
+uv pip install --system mako
 EOF
 
 COPY citm-utils /citm-utils
@@ -173,7 +173,7 @@ stderr_logfile_maxbytes=0
 stopsignal=TERM
 EOF
 
-COPY --chown=root:root --chmod=755 <<EOF /start-supervisord
+COPY <<EOF /start-supervisord
 #!/usr/bin/env bash
 
 set -euo pipefail
@@ -196,4 +196,27 @@ update-ca-certificates
 exec supervisord "\$@"
 EOF
 
-CMD [ "/start-supervisord" ]
+RUN chmod 755 /start-supervisord
+
+ARG DEVCONTAINER=false
+RUN <<EOF
+if [ "${DEVCONTAINER}" != "false" ]; then
+    uv tool install black
+    uv tool install rust-just
+
+    apt-get install -y golang
+
+    go install github.com/google/yamlfmt/cmd/yamlfmt@latest
+    ln -sf /root/go/bin/yamlfmt /root/.local/bin/yamlfmt
+
+    go install github.com/reteps/dockerfmt@latest
+    ln -sf /root/go/bin/dockerfmt /root/.local/bin/dockerfmt
+    
+    curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+    apt-get install -y nodejs
+    
+    npm install -g dclint
+fi
+EOF
+
+CMD ["/start-supervisord"]

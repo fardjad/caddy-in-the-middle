@@ -13,7 +13,7 @@ COPY .python-version uv.lock pyproject.toml app.py ./
 
 RUN uv sync
 
-COPY --chown=root:root --chmod=755 <<EOF /entrypoint.sh
+COPY <<EOF /entrypoint.sh
 #!/usr/bin/env bash
 
 set -euo pipefail
@@ -24,4 +24,6 @@ update-ca-certificates
 exec uv run gunicorn -w 4 -b 0.0.0.0:5031 app:app
 EOF
 
-ENTRYPOINT [ "/entrypoint.sh" ]
+RUN chmod 755 /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
