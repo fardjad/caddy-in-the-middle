@@ -3,15 +3,15 @@
 chsh -s /bin/zsh $USERNAME
 
 apt-get install -y \
-    build-essential \
-    git \
-    git-lfs \
-    golang \
-    jq \
-    neovim \
-    tmux \
-    vim \
-    zsh
+	build-essential \
+	git \
+	git-lfs \
+	golang \
+	jq \
+	neovim \
+	tmux \
+	vim \
+	zsh
 
 uv tool install black
 uv tool install rust-just
@@ -19,6 +19,7 @@ uv tool install rust-just
 # Go tools
 go install github.com/google/yamlfmt/cmd/yamlfmt@latest
 go install github.com/reteps/dockerfmt@latest
+go install mvdan.cc/sh/v3/cmd/shfmt@latest
 
 # Node.js 24.x
 curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
@@ -37,7 +38,7 @@ rm -f /tmp/install_starship.sh
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
 chmod a+r /etc/apt/keyrings/docker.asc
-  
+
 tee /etc/apt/sources.list.d/docker.sources <<INEOF
 Types: deb
 URIs: https://download.docker.com/linux/debian
@@ -51,9 +52,9 @@ apt-get install -y docker-ce-cli docker-buildx-plugin docker-compose-plugin
 
 export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
 mkdir -p "$HOME/.zsh/completion"
-just --completions=zsh > "$HOME/.zsh/completion/_just"
+just --completions=zsh >"$HOME/.zsh/completion/_just"
 
-cat > "$HOME/.zshrc" <<INEOF
+cat >"$HOME/.zshrc" <<INEOF
 export PATH="\$HOME/.local/bin:\$HOME/go/bin:\$PATH"
 
 fpath=("\$HOME/.zsh/completion" \$fpath)

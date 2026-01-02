@@ -13,10 +13,10 @@ set -euo pipefail
 cd "$(dirname "$0")" || exit 1
 
 for cmd in cfssl cfssljson openssl; do
-  if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "'$cmd' is not installed or not in PATH."
-    exit 1
-  fi
+	if ! command -v "$cmd" >/dev/null 2>&1; then
+		echo "'$cmd' is not installed or not in PATH."
+		exit 1
+	fi
 done
 
 OUTDIR="${OUTDIR:-certs}"
@@ -24,7 +24,7 @@ mkdir -p "$OUTDIR"
 
 PFX_PASSWORD="${PFX_PASSWORD:-secret}"
 
-cat <<EOF > "$OUTDIR/ca-csr.json" 
+cat <<EOF >"$OUTDIR/ca-csr.json"
 {
   "CN": "CITM Root CA",
   "key": { "algo": "rsa", "size": 4096 },
@@ -34,7 +34,7 @@ cat <<EOF > "$OUTDIR/ca-csr.json"
 EOF
 
 # 9600h is the maximum lifetime supported by Apple
-cat <<EOF > "$OUTDIR/ca-config.json"
+cat <<EOF >"$OUTDIR/ca-config.json"
 {
   "signing": {
     "default": { "expiry": "876000h" },
@@ -53,7 +53,7 @@ cat <<EOF > "$OUTDIR/ca-config.json"
 EOF
 
 if [[ ! -f "$OUTDIR/rootCA.pem" || ! -f "$OUTDIR/rootCA-key.pem" ]]; then
-  echo "Generating local Root CA..."
-  (cd "$OUTDIR" && cfssl genkey -initca ca-csr.json | cfssljson -bare rootCA)
-  openssl x509 -in "$OUTDIR/rootCA.pem" -outform DER -out "$OUTDIR/rootCA.cer"
+	echo "Generating local Root CA..."
+	(cd "$OUTDIR" && cfssl genkey -initca ca-csr.json | cfssljson -bare rootCA)
+	openssl x509 -in "$OUTDIR/rootCA.pem" -outform DER -out "$OUTDIR/rootCA.cer"
 fi

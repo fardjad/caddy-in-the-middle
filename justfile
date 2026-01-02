@@ -72,6 +72,18 @@ format-python *args: (_check-tools "black")
 check-python:
     @just format-python --check
 
-check: check-justfiles check-dockerfiles check-composefiles check-caddyfiles check-python
+check-shellscripts: (_check-tools "shfmt")
+    #!/usr/bin/env bash
 
-format: format-justfiles format-dockerfiles format-composefiles format-caddyfiles format-python
+    set -euo pipefail
+    shfmt -s -d .
+
+format-shellscripts: (_check-tools "shfmt")
+    #!/usr/bin/env bash
+
+    set -euo pipefail
+    shfmt -s -w .
+
+check: check-justfiles check-dockerfiles check-composefiles check-caddyfiles check-python check-shellscripts
+
+format: format-justfiles format-dockerfiles format-composefiles format-caddyfiles format-python format-shellscripts
