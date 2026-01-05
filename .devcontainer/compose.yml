@@ -33,6 +33,8 @@ services:
       - '127.0.0.1:443:443'
       - '127.0.0.1:443:443/udp'
       - '127.0.0.1:3858:3858'
+    networks:
+      - citm-example
     command: /start-supervisord
     init: true
     tty: true
@@ -44,6 +46,10 @@ services:
     command:
       - TCP-LISTEN:2375,fork,reuseaddr
       - UNIX-CONNECT:/var/run/docker.sock
+
+networks:
+  citm-example:
+    external: true
 
 volumes:
   vscode-server-data:

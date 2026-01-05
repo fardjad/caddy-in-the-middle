@@ -221,9 +221,9 @@ COPY --from=setup-devenv /setup-devenv.sh /setup-devenv.sh
 RUN /bin/bash /setup-devenv.sh && rm /setup-devenv.sh
 
 HEALTHCHECK --interval=5s --timeout=5s --start-period=5s --retries=60 \
-  CMD curl -fsS \
-      --connect-timeout 3 \
-      https://utils.citm.internal:3858/health \
-      || exit 1
+    CMD curl -fsS \
+    --connect-timeout 3 \
+    https://utils.citm.internal:3858/health \
+    || exit 1
 
 CMD ["/start-supervisord"]

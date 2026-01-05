@@ -20,5 +20,6 @@
   },
   "containerUser": "root",
   "remoteUser": "root",
-  "overrideCommand": false
+  "overrideCommand": false,
+  "initializeCommand": "docker network inspect citm-example >/dev/null 2>&1 || docker network create citm-example"
 }
