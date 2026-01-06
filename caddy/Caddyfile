@@ -1,11 +1,9 @@
 {
 	default_bind 0.0.0.0
 
-	admin off
-
 	log {
-		format json
-		output stderr
+		format console
+		output stdout
 	}
 
 	skip_install_trust
@@ -30,7 +28,6 @@
 }
 
 https://citm.internal:3858, https://*.citm.internal:3858, https://citm.localhost:3858 https://*.citm.localhost:3858 {
-	log
 	import dev_certs
 
 	@mitm `{host}.startsWith("mitm.citm.")`

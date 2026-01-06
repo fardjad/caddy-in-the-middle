@@ -22,9 +22,9 @@ services:
       - ../../shared-certificates/certs:/certs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
-      - '127.0.0.1:80:80'
-      - '127.0.0.1:443:443'
-      - '127.0.0.1:443:443/udp'
+      - '0.0.0.0:80:80'
+      - '0.0.0.0:443:443'
+      - '0.0.0.0:443:443/udp'
     networks:
       - citm-example
 

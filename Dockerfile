@@ -22,7 +22,8 @@ EOF
 FROM caddy:2-builder AS caddy-builder
 
 RUN xcaddy build \
-    --with github.com/abiosoft/caddy-yaml
+    --with github.com/abiosoft/caddy-yaml \
+    --with github.com/caddyserver/transform-encoder
 
 FROM mitmproxy/mitmproxy
 
@@ -69,6 +70,7 @@ files = /etc/supervisor/conf.d/*.conf
 EOF
 
 # Caddy
+
 COPY --from=caddy-builder /usr/bin/caddy /usr/bin/caddy
 RUN mkdir -p /etc/caddy && mkdir -p /etc/caddy/conf.d
 COPY ./caddy/Caddyfile /etc/caddy/Caddyfile
@@ -91,6 +93,7 @@ stopsignal=TERM
 EOF
 
 # Dnsmasq
+
 RUN <<EOF
 apt-get update -y
 apt-get install -y dnsmasq

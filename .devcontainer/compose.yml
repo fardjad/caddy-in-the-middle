@@ -29,10 +29,10 @@ services:
     environment:
       - DOCKER_HOST=tcp://localhost:2375
     ports:
-      - '127.0.0.1:80:80'
-      - '127.0.0.1:443:443'
-      - '127.0.0.1:443:443/udp'
-      - '127.0.0.1:3858:3858'
+      - '0.0.0.0:80:80'
+      - '0.0.0.0:443:443'
+      - '0.0.0.0:443:443/udp'
+      - '0.0.0.0:3858:3858'
     networks:
       - citm-example
     command: /start-supervisord

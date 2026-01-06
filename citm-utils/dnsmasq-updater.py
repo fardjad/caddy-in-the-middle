@@ -4,6 +4,7 @@ import functools
 import subprocess
 
 docker_client = docker.from_env()
+previous_dnsmasq_config = ""
 
 
 def debounce(wait_seconds):
@@ -69,12 +70,21 @@ def citm_dns_entries_to_dnsmasq_config(citm_dns_entries: dict[str, str]):
 
 
 @debounce(1)
-def update_dnsmasq_config():
+def reload_services():
+    global previous_dnsmasq_config
+
     entries = get_citm_dns_entries()
     config = citm_dns_entries_to_dnsmasq_config(entries)
     with open("/etc/dnsmasq.d/citm.conf", "w", encoding="utf-8") as f:
         f.write(config)
     subprocess.call(["supervisorctl", "signal", "SIGHUP", "dnsmasq"])
+
+    # Caddy keeps he connection open and doesn't do a hostname resolution until 
+    # it's restarted
+    if previous_dnsmasq_config != config:
+        print("Restarting Caddy...", flush=True)
+        subprocess.call(["supervisorctl", "restart", "caddy"])
+        previous_dnsmasq_config = config
 
 
 def watch_container_lifecycle(callback: function):
@@ -90,15 +100,15 @@ def watch_container_lifecycle(callback: function):
 
             callback()
     except KeyboardInterrupt:
-        print("\nExiting...")
+        print("\nExiting...", flush=True)
     finally:
         api.close()
 
 
 if __name__ == "__main__":
     try:
-        update_dnsmasq_config()
-        print("dnsmasq updater is listening for container lifecycle changes.")
-        watch_container_lifecycle(update_dnsmasq_config)
+        reload_services()
+        print("dnsmasq updater is listening for container lifecycle changes.", flush=True)
+        watch_container_lifecycle(reload_services)
     finally:
         docker_client.close()
