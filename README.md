@@ -40,11 +40,12 @@ Caddy in the Middle provides the following capabilities:
 
 ## Usage
 
-TODO: rewrite in a user-friendly way
-1. Add CITM to all services (side-car pattern, use the CITM service network for all other containers)
+1. Make sure CITM containers are part of the same network
+2. Add CITM to all services (side-car pattern, use the CITM service network for all other containers)
     1. Add the CITM container
     2. Mount the Docker socket (`/var/run/docker.sock:/var/run/docker.sock:ro`)
-    3. Define the service names for containers with labels (e.g. `citm_name=service1.internal`)
-2. Make sure CITM containers are part of the same network:
-    1. One docker compose project with multiple containers
-    2. Multiple docker compose projects all attached to a shared external isolated network
+    3. Set the label `citm_network` to  the name of a shared network with other compose projects
+    4. Set the label `citm_dns_names` and include the list of the DNS names in a comma separated list
+
+> [!TIP]
+> A working example is included in the [example](./example/) directory.
