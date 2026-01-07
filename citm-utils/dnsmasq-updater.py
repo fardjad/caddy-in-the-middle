@@ -79,7 +79,7 @@ def reload_services():
         f.write(config)
     subprocess.call(["supervisorctl", "signal", "SIGHUP", "dnsmasq"])
 
-    # Caddy keeps he connection open and doesn't do a hostname resolution until 
+    # Caddy keeps he connection open and doesn't do a hostname resolution until
     # it's restarted
     if previous_dnsmasq_config != config:
         print("Restarting Caddy...", flush=True)
@@ -108,7 +108,9 @@ def watch_container_lifecycle(callback: function):
 if __name__ == "__main__":
     try:
         reload_services()
-        print("dnsmasq updater is listening for container lifecycle changes.", flush=True)
+        print(
+            "dnsmasq updater is listening for container lifecycle changes.", flush=True
+        )
         watch_container_lifecycle(reload_services)
     finally:
         docker_client.close()

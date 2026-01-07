@@ -87,3 +87,5 @@ format-shellscripts: (_check-tools "shfmt")
 check: check-justfiles check-dockerfiles check-composefiles check-caddyfiles check-python check-shellscripts
 
 format: format-justfiles format-dockerfiles format-composefiles format-caddyfiles format-python format-shellscripts
+
+test: check
