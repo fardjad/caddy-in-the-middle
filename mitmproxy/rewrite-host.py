@@ -20,9 +20,7 @@ class RewriteHost:
         host_header = f"{pretty_host}:{flow.request.port}"
         flow.request.host = to_host
         flow.request.port = int(to_port)
-        for h in flow.request.headers.keys():
-            if h.lower() == "host":
-                flow.request.headers[h] = host_header
+        flow.request.host_header = host_header
 
 
 addons = [RewriteHost()]
