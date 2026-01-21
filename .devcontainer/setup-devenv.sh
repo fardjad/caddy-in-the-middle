@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-chsh -s /bin/zsh $USERNAME
-
-apt-get install -y \
+apt-get update -y && apt-get install -y \
 	build-essential \
 	git \
 	git-lfs \
@@ -12,6 +10,8 @@ apt-get install -y \
 	tmux \
 	vim \
 	zsh
+
+chsh -s /bin/zsh $USERNAME
 
 uv tool install black
 uv tool install rust-just

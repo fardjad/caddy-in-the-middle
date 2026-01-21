@@ -33,6 +33,9 @@ apt-get update -y
 apt-get install -y socat curl iputils-ping ca-certificates
 EOF
 
+COPY --from=setup-devenv /setup-devenv.sh /setup-devenv.sh
+RUN /bin/bash /setup-devenv.sh && rm /setup-devenv.sh
+
 # Supervisord
 RUN <<EOF
 apt-get update -y
@@ -69,29 +72,6 @@ port=0.0.0.0:9001
 files = /etc/supervisor/conf.d/*.conf
 EOF
 
-# Caddy
-
-COPY --from=caddy-builder /usr/bin/caddy /usr/bin/caddy
-RUN mkdir -p /etc/caddy && mkdir -p /etc/caddy/conf.d
-COPY ./caddy/Caddyfile /etc/caddy/Caddyfile
-
-COPY <<EOF /etc/supervisor/conf.d/caddy.conf
-[program:caddy]
-command=/usr/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
-environment=HTTP_PROXY="http://127.0.0.1:8380",HTTPS_PROXY="http://127.0.0.1:8380"
-autostart=true
-autorestart=true
-startretries=3
-user=root
-
-stdout_logfile=/dev/fd/1
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/fd/2
-stderr_logfile_maxbytes=0
-
-stopsignal=TERM
-EOF
-
 # Dnsmasq
 
 RUN <<EOF
@@ -110,6 +90,29 @@ COPY --chown=root:root --chmod=755 ./dnsmasq/start-dnsmasq.sh /usr/local/sbin/st
 COPY <<EOF /etc/supervisor/conf.d/dnsmasq.conf
 [program:dnsmasq]
 command=/usr/local/sbin/start-dnsmasq
+autostart=true
+autorestart=true
+startretries=3
+user=root
+
+stdout_logfile=/dev/fd/1
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/fd/2
+stderr_logfile_maxbytes=0
+
+stopsignal=TERM
+EOF
+
+# Caddy
+
+COPY --from=caddy-builder /usr/bin/caddy /usr/bin/caddy
+RUN mkdir -p /etc/caddy && mkdir -p /etc/caddy/conf.d
+COPY ./caddy/Caddyfile /etc/caddy/Caddyfile
+
+COPY <<EOF /etc/supervisor/conf.d/caddy.conf
+[program:caddy]
+command=/usr/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+environment=HTTP_PROXY="http://127.0.0.1:8380",HTTPS_PROXY="http://127.0.0.1:8380"
 autostart=true
 autorestart=true
 startretries=3
@@ -219,9 +222,6 @@ exec supervisord "\$@"
 EOF
 
 RUN chmod 755 /start-supervisord
-
-COPY --from=setup-devenv /setup-devenv.sh /setup-devenv.sh
-RUN /bin/bash /setup-devenv.sh && rm /setup-devenv.sh
 
 HEALTHCHECK --interval=5s --timeout=5s --start-period=5s --retries=60 \
     CMD curl -fsS \

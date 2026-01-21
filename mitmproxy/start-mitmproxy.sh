@@ -11,12 +11,14 @@ if [ -d "/mitm-scripts" ]; then
 fi
 
 mkdir -p /mitm-dump
+rm -f /mitm-dump/dump.flow
 
 mitmweb \
+	--mode regular@8380 \
+	--mode socks5@8381 \
 	-w /mitm-dump/dump.flow \
 	--set ssl_insecure=true \
-	--set listen_port=8380 \
-	--set web_port=8381 \
+	--set web_port=8382 \
 	--set web_password=secret \
 	--set block_global=false \
 	--set web_host=0.0.0.0 \

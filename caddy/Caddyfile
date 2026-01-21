@@ -33,7 +33,7 @@ https://citm.internal:3858, https://*.citm.internal:3858, https://citm.localhost
 	@mitm `{host}.startsWith("mitm.citm.")`
 	handle @mitm {
 		reverse_proxy {
-			to 127.0.0.1:8381
+			to 127.0.0.1:8382
 			header_up Authorization "Bearer secret"
 			header_up -Origin
 
