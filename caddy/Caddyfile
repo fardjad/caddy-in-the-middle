@@ -43,17 +43,6 @@ https://citm.internal:3858, https://*.citm.internal:3858, https://citm.localhost
 		}
 	}
 
-	@supervisor `{host}.startsWith("supervisor.citm.")`
-	handle @supervisor {
-		reverse_proxy {
-			to 127.0.0.1:9001
-
-			transport http {
-				network_proxy none
-			}
-		}
-	}
-
 	@utils `{host}.startsWith("utils.citm.")`
 	handle @utils {
 		reverse_proxy {

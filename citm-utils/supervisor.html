@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Supervisor</title>
+    <style>
+      :root {
+        --bg: #f4f6f8;
+        --panel: #ffffff;
+        --text: #1f2933;
+        --muted: #5b6770;
+        --border: #d0d7de;
+        --header: #eef2f6;
+        --accent: #0b6bcb;
+        --danger: #c0392b;
+        --ok: #2e8b57;
+        --warn: #b9770e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
+          sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        min-height: 100vh;
+      }
+
+      header {
+        padding: 28px 6vw 18px 6vw;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 40px);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      main {
+        padding: 0 6vw 60px 6vw;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      thead th {
+        text-align: left;
+        font-size: 13px;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        padding: 12px 14px;
+        background: var(--header);
+        border-bottom: 1px solid var(--border);
+      }
+
+      tbody td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+        font-size: 14px;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #f9fbfc;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+
+      .dot.ok {
+        background: var(--ok);
+      }
+
+      .dot.warn {
+        background: var(--warn);
+      }
+
+      .dot.unknown {
+        background: var(--muted);
+      }
+
+      .dot.bad {
+        background: var(--danger);
+      }
+
+      .meta {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        background: #ffffff;
+        color: var(--text);
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+
+      button:hover {
+        background: #f1f4f8;
+        border-color: #c3c8cf;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+
+      button.primary {
+        background: var(--accent);
+        color: #ffffff;
+        border-color: transparent;
+      }
+
+      button.secondary {
+        background: #ffffff;
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .toolbar button {
+        font-weight: 600;
+      }
+
+      .error {
+        background: #fbeaea;
+        border: 1px solid #f4c7c7;
+        padding: 12px 16px;
+        border-radius: 12px;
+        margin: 0 6vw 24px 6vw;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Supervisor</h1>
+      <div class="toolbar">
+        <button class="secondary" id="refresh">Refresh</button>
+        <button class="primary" id="restart-all">Restart All</button>
+        <span id="timestamp" class="meta"></span>
+      </div>
+    </header>
+    <div class="error" id="error"></div>
+    <main>
+      <table id="services">
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Status</th>
+            <th>Details</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="service-body"></tbody>
+      </table>
+    </main>
+    <script>
+      const tbody = document.getElementById("service-body");
+      const errorEl = document.getElementById("error");
+      const timestampEl = document.getElementById("timestamp");
+      const rowMap = new Map();
+
+      const statusClass = (state) => {
+        const normalized = state.toLowerCase();
+        if (normalized === "running") return "ok";
+        if (normalized === "unknown") return "unknown";
+        if (normalized === "starting" || normalized === "stopping") return "warn";
+        if (normalized === "stopped") return "warn";
+        return "bad";
+      };
+
+      const ensureRow = (svc) => {
+        const existing = rowMap.get(svc.name);
+        if (existing) return existing;
+
+        const row = document.createElement("tr");
+        row.dataset.name = svc.name;
+
+        const nameCell = document.createElement("td");
+        nameCell.textContent = svc.name;
+
+        const statusCell = document.createElement("td");
+        const statusWrap = document.createElement("span");
+        statusWrap.className = "status";
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        const statusText = document.createElement("span");
+        statusWrap.append(dot, statusText);
+        statusCell.appendChild(statusWrap);
+
+        const descCell = document.createElement("td");
+        descCell.className = "meta";
+
+        const actionsCell = document.createElement("td");
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        const buttons = {};
+        ["start", "stop", "restart"].forEach((action) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.action = action;
+          button.textContent = action[0].toUpperCase() + action.slice(1);
+          buttons[action] = button;
+          actions.appendChild(button);
+        });
+        actionsCell.appendChild(actions);
+
+        row.append(nameCell, statusCell, descCell, actionsCell);
+        tbody.appendChild(row);
+
+        const refs = { row, dot, statusText, descCell, buttons };
+        rowMap.set(svc.name, refs);
+        return refs;
+      };
+
+      const updateActions = (refs, status) => {
+        const normalized = status.toLowerCase();
+        const disableAll =
+          normalized === "unknown" ||
+          normalized === "starting" ||
+          normalized === "stopping";
+        if (disableAll) {
+          Object.values(refs.buttons).forEach((btn) => {
+            btn.disabled = true;
+          });
+          return;
+        }
+
+        const isRunning = normalized === "running";
+        const isStopped = normalized === "stopped";
+        refs.buttons.start.disabled = isRunning;
+        refs.buttons.stop.disabled = isStopped;
+        refs.buttons.restart.disabled = false;
+      };
+
+      const updateRow = (svc) => {
+        const refs = ensureRow(svc);
+        const status = svc.state || "unknown";
+        refs.dot.className = `dot ${statusClass(status)}`;
+        refs.statusText.textContent = status;
+        refs.descCell.textContent = svc.description || "No details available.";
+        updateActions(refs, status);
+      };
+
+      const setRowUnknown = (name) => {
+        const refs = rowMap.get(name);
+        if (!refs) return;
+        const status = "unknown";
+        refs.dot.className = `dot ${statusClass(status)}`;
+        refs.statusText.textContent = status;
+        updateActions(refs, status);
+      };
+
+      const setAllUnknown = () => {
+        rowMap.forEach((_, name) => {
+          setRowUnknown(name);
+        });
+      };
+
+      const render = (services) => {
+        const seen = new Set();
+        services.forEach((svc) => {
+          seen.add(svc.name);
+          updateRow(svc);
+        });
+        rowMap.forEach((refs, name) => {
+          if (!seen.has(name)) {
+            refs.row.remove();
+            rowMap.delete(name);
+          }
+        });
+      };
+
+      const setError = (message) => {
+        if (message) {
+          errorEl.textContent = message;
+          errorEl.style.display = "block";
+        } else {
+          errorEl.style.display = "none";
+          errorEl.textContent = "";
+        }
+      };
+
+      const refresh = async () => {
+        setError("");
+        try {
+          const response = await fetch("/supervisor/api/services");
+          if (!response.ok) {
+            throw new Error(`Failed to load services (${response.status})`);
+          }
+          const data = await response.json();
+          render(data.services);
+          timestampEl.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+
+      const actOnService = async (name, action) => {
+        setError("");
+        try {
+          const response = await fetch(`/supervisor/api/services/${name}/${action}`, {
+            method: "POST",
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.error || "Action failed");
+          }
+          await refresh();
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+
+      const restartAll = async () => {
+        setError("");
+        try {
+          const response = await fetch("/supervisor/api/services/restart-all", {
+            method: "POST",
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.error || "Restart all failed");
+          }
+          await refresh();
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+
+      tbody.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+        const row = button.closest("tr");
+        if (!row) return;
+        setRowUnknown(row.dataset.name);
+        actOnService(row.dataset.name, button.dataset.action);
+      });
+
+      document.getElementById("refresh").addEventListener("click", () => {
+        setAllUnknown();
+        refresh();
+      });
+      document.getElementById("restart-all").addEventListener("click", () => {
+        setAllUnknown();
+        restartAll();
+      });
+      refresh();
+      setInterval(refresh, 5000);
+    </script>
+  </body>
+</html>

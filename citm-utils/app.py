@@ -5,11 +5,90 @@ pip_system_certs.wrapt_requests.inject_truststore()
 from flask import Flask, send_file, request, jsonify
 import subprocess
 import fcntl
-import os
 import socket
 import requests
 
 app = Flask(__name__)
+
+
+def run_supervisorctl(args):
+    result = subprocess.run(
+        ["supervisorctl", *args],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result
+
+
+def parse_status_lines(raw_output):
+    services = []
+    for line in raw_output.splitlines():
+        parts = line.split(None, 2)
+        if len(parts) < 2:
+            continue
+        name = parts[0]
+        state = parts[1]
+        description = parts[2] if len(parts) == 3 else ""
+        services.append(
+            {
+                "name": name,
+                "state": state,
+                "description": description.strip(),
+            }
+        )
+    return services
+
+
+@app.route("/supervisor", methods=["GET"])
+def get_ui():
+    return send_file("supervisor.html")
+
+
+@app.route("/supervisor/api/services", methods=["GET"])
+def list_services():
+    result = run_supervisorctl(["status"])
+    if result.returncode != 0:
+        return (
+            jsonify({"error": "Failed to read supervisor status", "details": result.stderr}),
+            502,
+        )
+    services = parse_status_lines(result.stdout)
+    return jsonify({"services": services, "hostname": socket.gethostname()}), 200
+
+
+@app.route("/supervisor/api/services/<name>/<action>", methods=["POST"])
+def service_action(name, action):
+    if action not in {"start", "stop", "restart"}:
+        return jsonify({"error": "Unsupported action"}), 400
+    result = run_supervisorctl([action, name])
+    if result.returncode != 0:
+        return (
+            jsonify(
+                {
+                    "error": "Supervisor action failed",
+                    "details": result.stderr or result.stdout,
+                }
+            ),
+            502,
+        )
+    return jsonify({"status": "ok", "output": result.stdout}), 200
+
+
+@app.route("/supervisor/api/services/restart-all", methods=["POST"])
+def restart_all():
+    result = run_supervisorctl(["restart", "all"])
+    if result.returncode != 0:
+        return (
+            jsonify(
+                {
+                    "error": "Supervisor action failed",
+                    "details": result.stderr or result.stdout,
+                }
+            ),
+            502,
+        )
+    return jsonify({"status": "ok", "output": result.stdout}), 200
 
 
 @app.route("/", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])

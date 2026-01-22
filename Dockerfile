@@ -65,9 +65,6 @@ supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 [supervisorctl]
 serverurl=unix:///var/run/supervisor.sock
 
-[inet_http_server]
-port=0.0.0.0:9001
-
 [include]
 files = /etc/supervisor/conf.d/*.conf
 EOF
