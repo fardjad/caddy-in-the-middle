@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 apt-get update -y && apt-get install -y \
 	build-essential \
 	git \
@@ -11,7 +13,7 @@ apt-get update -y && apt-get install -y \
 	vim \
 	zsh
 
-chsh -s /bin/zsh $USERNAME
+chsh -s /bin/zsh $(whoami)
 
 uv tool install black
 uv tool install rust-just

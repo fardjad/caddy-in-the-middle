@@ -7,7 +7,7 @@ class RewriteHost:
         if to == "":
             return
 
-        (to_host, _, to_port) = to.partition(":")
+        to_host, _, to_port = to.partition(":")
 
         if emoji != "":
             flow.marked = emoji

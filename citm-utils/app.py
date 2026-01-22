@@ -50,7 +50,9 @@ def list_services():
     result = run_supervisorctl(["status"])
     if result.returncode != 0:
         return (
-            jsonify({"error": "Failed to read supervisor status", "details": result.stderr}),
+            jsonify(
+                {"error": "Failed to read supervisor status", "details": result.stderr}
+            ),
             502,
         )
     services = parse_status_lines(result.stdout)

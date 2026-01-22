@@ -33,6 +33,8 @@ apt-get update -y
 apt-get install -y socat curl iputils-ping ca-certificates
 EOF
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 COPY --from=setup-devenv /setup-devenv.sh /setup-devenv.sh
 RUN /bin/bash /setup-devenv.sh && rm /setup-devenv.sh
 
@@ -148,8 +150,6 @@ stopsignal=TERM
 EOF
 
 # CITM Utils
-
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 RUN <<EOF
 uv pip install --system mako
