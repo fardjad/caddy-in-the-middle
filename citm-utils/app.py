@@ -7,6 +7,10 @@ import subprocess
 import fcntl
 import socket
 import requests
+import service_discovery
+import docker
+
+docker_client = docker.from_env()
 
 app = Flask(__name__)
 
@@ -104,8 +108,15 @@ def get_info():
         "args": request.args.to_dict(flat=False),
         "cookies": request.cookies,
     }
+    dns_entries = service_discovery.get_citm_dns_entries(docker_client)
     return (
-        jsonify({"hostname": socket.gethostname(), "request_data": request_data}),
+        jsonify(
+            {
+                "hostname": socket.gethostname(),
+                "request_data": request_data,
+                "dns_entries": dns_entries,
+            }
+        ),
         200,
     )
 
@@ -115,7 +126,6 @@ def get_health():
 
     checks = [
         ("https://citm.internal:3858", 404),
-        ("https://supervisor.citm.internal:3858", 200),
         ("https://mitm.citm.internal:3858", 200),
     ]
 
