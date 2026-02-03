@@ -31,7 +31,9 @@ def _rpc():
     return xmlrpc.client.ServerProxy("http://localhost/RPC2", transport=transport)
 
 
-def _start_with_retry(server, name: str, *, retries: int = 5, delay_s: float = 0.3) -> None:
+def _start_with_retry(
+    server, name: str, *, retries: int = 5, delay_s: float = 0.3
+) -> None:
     """Start a Supervisor program with small retries for transient STOPPING states."""
     for attempt in range(retries):
         try:
@@ -52,6 +54,17 @@ def _start_with_retry(server, name: str, *, retries: int = 5, delay_s: float = 0
                 time.sleep(delay_s)
                 continue
             raise
+
+
+def _get_process(server, name: str) -> Dict[str, Any]:
+    return server.supervisor.getProcessInfo(name)
+
+
+def _stop_if_running(server, name: str) -> None:
+    info = _get_process(server, name)
+    if info.get("statename") == "RUNNING":
+        # wait=True so a subsequent start is not racing STOPPING
+        server.supervisor.stopProcess(name, True)
 
 
 class SupervisorError(Exception):
@@ -98,12 +111,33 @@ def service_action(name: str, action: str) -> None:
     try:
         server = _rpc()
         if action == "start":
-            server.supervisor.startProcess(name, False)
+            _start_with_retry(server, name)
+
         elif action == "stop":
-            server.supervisor.stopProcess(name, False)
+            # Only stop if currently running; EXITED/STOPPED/FATAL are already not running.
+            _stop_if_running(server, name)
+
         elif action == "restart":
-            server.supervisor.stopProcess(name, False)
-            server.supervisor.startProcess(name, False)
+            info = _get_process(server, name)
+            state = info.get("statename")
+
+            # If it's running, stop first then start.
+            if state == "RUNNING":
+                _stop_if_running(server, name)
+                _start_with_retry(server, name)
+
+            # If it's not running (EXITED/STOPPED/FATAL/UNKNOWN), just start it.
+            elif state in {"EXITED", "STOPPED", "FATAL", "UNKNOWN"}:
+                _start_with_retry(server, name)
+
+            # Transient states: try to start with retry; if still not possible, bubble error.
+            elif state in {"STARTING", "STOPPING", "BACKOFF"}:
+                _start_with_retry(server, name)
+
+            else:
+                # Default: attempt a start, letting Supervisor raise if invalid.
+                _start_with_retry(server, name)
+
     except Exception as e:
         raise SupervisorError(
             "Supervisor action failed via RPC",
