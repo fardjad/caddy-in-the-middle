@@ -2,6 +2,7 @@ import pip_system_certs.wrapt_requests
 
 pip_system_certs.wrapt_requests.inject_truststore()
 
+import supervisor
 from flask import Flask, send_file, request, jsonify
 import subprocess
 import fcntl
@@ -15,35 +16,6 @@ docker_client = docker.from_env()
 app = Flask(__name__)
 
 
-def run_supervisorctl(args):
-    result = subprocess.run(
-        ["supervisorctl", *args],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return result
-
-
-def parse_status_lines(raw_output):
-    services = []
-    for line in raw_output.splitlines():
-        parts = line.split(None, 2)
-        if len(parts) < 2:
-            continue
-        name = parts[0]
-        state = parts[1]
-        description = parts[2] if len(parts) == 3 else ""
-        services.append(
-            {
-                "name": name,
-                "state": state,
-                "description": description.strip(),
-            }
-        )
-    return services
-
-
 @app.route("/supervisor", methods=["GET"])
 def get_ui():
     return send_file("supervisor.html")
@@ -51,50 +23,38 @@ def get_ui():
 
 @app.route("/supervisor/api/services", methods=["GET"])
 def list_services():
-    result = run_supervisorctl(["status"])
-    if result.returncode != 0:
+    try:
+        services = supervisor.list_services()
+        return jsonify({"services": services, "hostname": socket.gethostname()}), 200
+    except supervisor.SupervisorError as e:
+        return jsonify({"error": e.message, "details": e.details}), e.status_code
+    except Exception as e:
         return (
-            jsonify(
-                {"error": "Failed to read supervisor status", "details": result.stderr}
-            ),
+            jsonify({"error": "Failed to read supervisor services", "details": str(e)}),
             502,
         )
-    services = parse_status_lines(result.stdout)
-    return jsonify({"services": services, "hostname": socket.gethostname()}), 200
 
 
 @app.route("/supervisor/api/services/<name>/<action>", methods=["POST"])
 def service_action(name, action):
-    if action not in {"start", "stop", "restart"}:
-        return jsonify({"error": "Unsupported action"}), 400
-    result = run_supervisorctl([action, name])
-    if result.returncode != 0:
-        return (
-            jsonify(
-                {
-                    "error": "Supervisor action failed",
-                    "details": result.stderr or result.stdout,
-                }
-            ),
-            502,
-        )
-    return jsonify({"status": "ok", "output": result.stdout}), 200
+    try:
+        supervisor.service_action(name, action)
+        return jsonify({"status": "ok"}), 200
+    except supervisor.SupervisorError as e:
+        return jsonify({"error": e.message, "details": e.details}), e.status_code
+    except Exception as e:
+        return jsonify({"error": "Supervisor action failed", "details": str(e)}), 502
 
 
 @app.route("/supervisor/api/services/restart-all", methods=["POST"])
 def restart_all():
-    result = run_supervisorctl(["restart", "all"])
-    if result.returncode != 0:
-        return (
-            jsonify(
-                {
-                    "error": "Supervisor action failed",
-                    "details": result.stderr or result.stdout,
-                }
-            ),
-            502,
-        )
-    return jsonify({"status": "ok", "output": result.stdout}), 200
+    try:
+        supervisor.restart_all()
+        return jsonify({"status": "ok"}), 200
+    except supervisor.SupervisorError as e:
+        return jsonify({"error": e.message, "details": e.details}), e.status_code
+    except Exception as e:
+        return jsonify({"error": "Supervisor action failed", "details": str(e)}), 502
 
 
 @app.route("/", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])

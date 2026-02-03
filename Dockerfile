@@ -110,7 +110,7 @@ COPY ./caddy/Caddyfile /etc/caddy/Caddyfile
 
 COPY <<EOF /etc/supervisor/conf.d/caddy.conf
 [program:caddy]
-command=/usr/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+command=/usr/bin/caddy run --watch --config /etc/caddy/Caddyfile --adapter caddyfile
 environment=HTTP_PROXY="http://127.0.0.1:8380",HTTPS_PROXY="http://127.0.0.1:8380"
 autostart=true
 autorestart=true
@@ -123,6 +123,12 @@ stderr_logfile=/dev/fd/2
 stderr_logfile_maxbytes=0
 
 stopsignal=TERM
+
+[program:caddy-reload]
+command=/usr/bin/caddy reload --config /etc/caddy/Caddyfile
+autostart=false
+autorestart=false
+startsecs=0
 EOF
 
 # MITM Proxy
