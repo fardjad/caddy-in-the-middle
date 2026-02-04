@@ -6,7 +6,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 # Internal: processes we never want to manage via the UI/API
-_EXCLUDED_PROCESSES = {"citm-utils-web", "caddy"}
+_EXCLUDED_PROCESSES = {"citm-utils-web"}
 
 
 def _is_managed(proc_info: Dict[str, Any]) -> bool:
