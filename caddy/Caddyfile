@@ -4,6 +4,7 @@
 	log {
 		format console
 		output stdout
+		level ERROR
 	}
 
 	skip_install_trust
