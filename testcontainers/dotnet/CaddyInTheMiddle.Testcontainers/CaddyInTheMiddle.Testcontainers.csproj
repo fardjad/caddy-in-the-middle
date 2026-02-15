@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Version>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../../../VERSION.txt').Trim())</Version>
-        <PackageId>Testcontainers.CaddyInTheMiddle</PackageId>
+        <PackageId>CaddyInTheMiddle.Testcontainers</PackageId>
         <Title>Testcontainers CaddyInTheMiddle Module</Title>
         <Authors>Fardjad Davari</Authors>
         <Description>Testcontainers for .NET module to run CaddyInTheMiddle container.</Description>

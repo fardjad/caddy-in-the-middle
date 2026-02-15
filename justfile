@@ -104,8 +104,14 @@ publish-testcontainers-dotnet:
 
     set -euo pipefail
 
+    if [ -z "${NUGET_API_KEY:-}" ]; then
+        echo "Error: NUGET_API_KEY environment variable is not set."
+        echo "Please export NUGET_API_KEY=<your-api-key> and try again."
+        exit 1
+    fi
+
     cd testcontainers/dotnet
-    dotnet pack Testcontainers.CaddyInTheMiddle/Testcontainers.CaddyInTheMiddle.csproj -c Release
-    dotnet nuget push Testcontainers.CaddyInTheMiddle/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
+    dotnet pack CaddyInTheMiddle.Testcontainers/CaddyInTheMiddle.Testcontainers.csproj -c Release
+    dotnet nuget push CaddyInTheMiddle.Testcontainers/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
 
 publish-testcontainers: publish-testcontainers-python publish-testcontainers-dotnet

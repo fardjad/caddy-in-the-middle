@@ -1,0 +1,4 @@
+<Solution>
+    <Project Path="CaddyInTheMiddle.Testcontainers.Tests/CaddyInTheMiddle.Testcontainers.Tests.csproj"/>
+    <Project Path="CaddyInTheMiddle.Testcontainers/CaddyInTheMiddle.Testcontainers.csproj"/>
+</Solution>
