@@ -89,3 +89,23 @@ check: check-justfiles check-dockerfiles check-composefiles check-caddyfiles che
 format: format-justfiles format-dockerfiles format-composefiles format-caddyfiles format-python format-shellscripts
 
 test: check
+
+publish-testcontainers-python:
+    #!/usr/bin/env bash
+
+    set -euo pipefail
+
+    cd testcontainers/python
+    uv build
+    uv publish
+
+publish-testcontainers-dotnet:
+    #!/usr/bin/env bash
+
+    set -euo pipefail
+
+    cd testcontainers/dotnet
+    dotnet pack Testcontainers.CaddyInTheMiddle/Testcontainers.CaddyInTheMiddle.csproj -c Release
+    dotnet nuget push Testcontainers.CaddyInTheMiddle/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+publish-testcontainers: publish-testcontainers-python publish-testcontainers-dotnet
