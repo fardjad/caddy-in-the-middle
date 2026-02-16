@@ -114,4 +114,14 @@ publish-testcontainers-dotnet:
     dotnet pack CaddyInTheMiddle.Testcontainers/CaddyInTheMiddle.Testcontainers.csproj -c Release
     dotnet nuget push CaddyInTheMiddle.Testcontainers/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
 
+upgrade-python-deps *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    for f in $(find . -maxdepth 5 -type f -name 'pyproject.toml'); do
+        dir=$(dirname "$f")
+        echo "Processing $dir..."
+        python3 hack/upgrade_deps.py "$dir"
+    done
+
 publish-testcontainers: publish-testcontainers-python publish-testcontainers-dotnet
