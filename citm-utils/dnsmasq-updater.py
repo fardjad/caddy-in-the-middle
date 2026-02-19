@@ -87,13 +87,15 @@ def reload_services():
     config = citm_dns_entries_to_dnsmasq_config(entries)
     with open("/etc/dnsmasq.d/citm.conf", "w", encoding="utf-8") as f:
         f.write(config)
-    subprocess.call(["supervisorctl", "signal", "SIGHUP", "dnsmasq"])
 
-    # Caddy keeps the connection open and doesn't do a hostname resolution until
-    # it's restarted
     if previous_dnsmasq_config != config:
+        subprocess.call(["supervisorctl", "signal", "SIGHUP", "dnsmasq"])
+
+        # Caddy keeps the connection open and doesn't do a hostname resolution until
+        # it's restarted
         print("Restarting Caddy...", flush=True)
         subprocess.call(["supervisorctl", "restart", "caddy"])
+
         previous_dnsmasq_config = config
 
 
