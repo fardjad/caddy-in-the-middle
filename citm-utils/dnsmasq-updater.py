@@ -3,9 +3,49 @@ import docker
 import threading
 import functools
 import subprocess
+import time
+import queue
+from typing import Any, Callable
 
 docker_client = docker.from_env()
 previous_dnsmasq_config = ""
+
+
+class EventEmitter:
+    def __init__(self) -> None:
+        self._handlers: dict[str, list[Callable[..., None]]] = {}
+        self._queue: (
+            "queue.SimpleQueue[tuple[str, tuple[Any, ...], dict[str, Any]]]"
+        ) = queue.SimpleQueue()
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+
+    def start(self) -> None:
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._stop.set()
+        # Unblock the queue consumer
+        self.emit("__stop__")
+        self._thread.join(timeout=2)
+
+    def on(self, event: str, handler: Callable[..., None]) -> None:
+        self._handlers.setdefault(event, []).append(handler)
+
+    def emit(self, event: str, *args: Any, **kwargs: Any) -> None:
+        self._queue.put((event, args, kwargs))
+
+    def _run(self) -> None:
+        while not self._stop.is_set():
+            event, args, kwargs = self._queue.get()
+            if event == "__stop__":
+                continue
+            for handler in self._handlers.get(event, []):
+                try:
+                    handler(*args, **kwargs)
+                except Exception as e:
+                    # Keep the event loop alive even if a handler fails
+                    print(f"Event handler error for '{event}': {e}", flush=True)
 
 
 def debounce(wait_seconds):
@@ -58,13 +98,43 @@ def reload_services():
 
 
 if __name__ == "__main__":
+    stop_event = threading.Event()
+    events = EventEmitter()
+
+    events.on("change", lambda: reload_services())
+
+    # FIXME: this a workaround for a hard to reproduce case where the IP
+    # address ends up being empty or wrong. There should be a better way to
+    # address this
+    def timer_loop():
+        while not stop_event.is_set():
+            events.emit("change")
+            time.sleep(1)
+
+    timer_thread = threading.Thread(target=timer_loop, daemon=True)
+
     try:
-        reload_services()
+        events.start()
+        timer_thread.start()
+
+        # Initial run
+        events.emit("change")
+
         print(
-            "dnsmasq updater is listening for container lifecycle changes.", flush=True
+            "dnsmasq updater is listening for container lifecycle changes and timer ticks.",
+            flush=True,
         )
+
+        def on_exit(_):
+            stop_event.set()
+            print("\nExiting...", flush=True)
+
         watch_container_lifecycle(
-            docker_client, reload_services, lambda _: print("\nExiting...", flush=True)
+            docker_client, lambda *_: events.emit("change"), on_exit
         )
     finally:
-        docker_client.close()
+        stop_event.set()
+        try:
+            events.stop()
+        finally:
+            docker_client.close()
