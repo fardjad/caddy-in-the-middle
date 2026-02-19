@@ -52,10 +52,19 @@ def main():
         ["uv", "sync"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
 
+    with open(pyproject_path, "rb") as f:
+        data = tomllib.load(f)
+
+    project_name = data.get("project", {}).get("name")
+
     # Get outdated packages
     print("  Checking for outdated packages...")
+    cmd = ["uv", "pip", "list", "--outdated", "--format=json", "--exclude-editable"]
+    if project_name:
+        cmd.extend(["--exclude", project_name])
+
     result = subprocess.run(
-        ["uv", "pip", "list", "--outdated", "--format=json"],
+        cmd,
         capture_output=True,
         text=True,
         check=True,
@@ -75,9 +84,6 @@ def main():
     outdated_map = {
         normalize_name(pkg["name"]): pkg["latest_version"] for pkg in outdated_packages
     }
-
-    with open(pyproject_path, "rb") as f:
-        data = tomllib.load(f)
 
     # Upgrade main dependencies
     if "project" in data and "dependencies" in data["project"]:

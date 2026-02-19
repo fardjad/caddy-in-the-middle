@@ -90,6 +90,12 @@ format: format-justfiles format-dockerfiles format-composefiles format-caddyfile
 
 test: check
 
+install-git-hooks: (_check-tools "uv")
+    #!/usr/bin/env bash
+
+    set -euo pipefail
+    uv tool run pre-commit install
+
 publish-testcontainers-python:
     #!/usr/bin/env bash
 
