@@ -73,13 +73,15 @@ The module should provide a fluent API (Builder) to configure the container.
 
 ## 3. Helper Methods
 
-The container instance should provide methods to easily access the exposed services.
+The container instance should provide methods to easily access the exposed services. When resolving the `<host>`, if the container's hostname is a loopback IP (e.g., `127.0.0.1` or `::1`), it **SHOULD** be converted to `localhost` to allow for proper subdomain routing.
 
-*   **`GetCaddyHttpBaseUrl()`**: Returns `http://<host>:<mapped_port_80>`.
-*   **`GetCaddyHttpsBaseUrl()`**: Returns `https://<host>:<mapped_port_443>`.
+Some methods accept an optional list of subdomains. If provided, they are prepended to the host (e.g., `sub1.sub2.<host>`).
+
+*   **`GetCaddyHttpBaseUrl(subdomains...)`**: Returns `http://[subdomains.]<host>:<mapped_port_80>`.
+*   **`GetCaddyHttpsBaseUrl(subdomains...)`**: Returns `https://[subdomains.]<host>:<mapped_port_443>`.
 *   **`GetHttpProxyAddress()`**: Returns `http://<host>:<mapped_port_8380>`.
 *   **`GetSocksProxyAddress()`**: Returns `socks5://<host>:<mapped_port_8381>`.
-*   **`GetAdminBaseUrl()`**: Returns `http://<host>:<mapped_port_3858>`.
+*   **`GetAdminBaseUrl(subdomains...)`**: Returns `https://[subdomains.]<host>:<mapped_port_3858>`.
 *   **`CreateHttpClientHandler(ignoreSslErrors=true)`**: Returns an HTTP client handler (or equivalent) configured to use the container's HTTP proxy. It should default to ignoring SSL errors (since CITM uses self-signed certs).
 
 ## 4. Certificate Generation Helper

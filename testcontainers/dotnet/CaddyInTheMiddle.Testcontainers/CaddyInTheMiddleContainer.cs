@@ -2,7 +2,7 @@ using System.Net;
 using DotNet.Testcontainers.Containers;
 using JetBrains.Annotations;
 
-namespace Testcontainers.CaddyInTheMiddle;
+namespace CaddyInTheMiddle.Testcontainers;
 
 /// <summary>
 /// Represents a CaddyInTheMiddle container.
@@ -14,22 +14,35 @@ public sealed class CaddyInTheMiddleContainer(CaddyInTheMiddleConfiguration conf
     // this is used in tests
     private readonly CaddyInTheMiddleConfiguration _configuration = configuration;
 
+    private string GetHostnameWithSubdomains(string[]? subdomains)
+    {
+        var baseHostname = Hostname.ToLocalhostIfLoopback();
+        if (subdomains == null || subdomains.Length == 0)
+        {
+            return baseHostname;
+        }
+
+        return $"{string.Join(".", subdomains)}.{baseHostname}";
+    }
+
     /// <summary>
     /// Gets the base URL for HTTP requests to Caddy (port 80).
     /// </summary>
+    /// <param name="subdomains">Optional subdomains to prepend to the hostname.</param>
     /// <returns>The HTTP base URL.</returns>
-    public string GetCaddyHttpBaseUrl()
+    public string GetCaddyHttpBaseUrl(params string[] subdomains)
     {
-        return new UriBuilder("http", Hostname, GetMappedPublicPort(CaddyInTheMiddleBuilder.HttpPort)).ToString();
+        return new UriBuilder("http", GetHostnameWithSubdomains(subdomains), GetMappedPublicPort(CaddyInTheMiddleBuilder.HttpPort)).ToString();
     }
 
     /// <summary>
     /// Gets the base URL for HTTPS requests to Caddy (port 443).
     /// </summary>
+    /// <param name="subdomains">Optional subdomains to prepend to the hostname.</param>
     /// <returns>The HTTPS base URL.</returns>
-    public string GetCaddyHttpsBaseUrl()
+    public string GetCaddyHttpsBaseUrl(params string[] subdomains)
     {
-        return new UriBuilder("https", Hostname, GetMappedPublicPort(CaddyInTheMiddleBuilder.HttpsPort)).ToString();
+        return new UriBuilder("https", GetHostnameWithSubdomains(subdomains), GetMappedPublicPort(CaddyInTheMiddleBuilder.HttpsPort)).ToString();
     }
 
     /// <summary>
@@ -53,10 +66,11 @@ public sealed class CaddyInTheMiddleContainer(CaddyInTheMiddleConfiguration conf
     /// <summary>
     /// Gets the base URL for the Caddy admin API (port 3858).
     /// </summary>
+    /// <param name="subdomains">Optional subdomains to prepend to the hostname.</param>
     /// <returns>The Admin API base URL.</returns>
-    public string GetAdminBaseUrl()
+    public string GetAdminBaseUrl(params string[] subdomains)
     {
-        return new UriBuilder("http", Hostname, GetMappedPublicPort(CaddyInTheMiddleBuilder.AdminPort)).ToString();
+        return new UriBuilder("https", GetHostnameWithSubdomains(subdomains), GetMappedPublicPort(CaddyInTheMiddleBuilder.AdminPort)).ToString();
     }
 
     /// <summary>

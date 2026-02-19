@@ -1,6 +1,6 @@
 using JetBrains.Annotations;
 
-namespace Testcontainers.CaddyInTheMiddle.Tests;
+namespace CaddyInTheMiddle.Testcontainers.Tests;
 
 [TestSubject(typeof(CaddyInTheMiddleContainer))]
 [UsedImplicitly]
@@ -18,6 +18,7 @@ public class CaddyInTheMiddleContainerFixture : IAsyncLifetime
         CaddyInTheMiddleCertificates.Generate(_certsDirectory);
 
         Container = new CaddyInTheMiddleBuilder()
+            .WithImage("fardjad/citm:latest")
             .WithCertsDirectory(_certsDirectory)
             .WithMocksDirectory(_mocksDirectory)
             .Build();
@@ -60,18 +61,18 @@ public class CaddyInTheMiddleContainerTest(CaddyInTheMiddleContainerFixture fixt
     [Fact]
     public void ShouldReturnValidCaddyHttpBaseUrl()
     {
-        var url = _container.GetCaddyHttpBaseUrl();
+        var url = _container.GetCaddyHttpBaseUrl("s1", "s2");
         Assert.StartsWith("http://", url);
-        Assert.Contains(_container.Hostname, url);
+        Assert.Contains("s1.s2", url);
         Assert.True(Uri.TryCreate(url, UriKind.Absolute, out _));
     }
 
     [Fact]
     public void ShouldReturnValidCaddyHttpsBaseUrl()
     {
-        var url = _container.GetCaddyHttpsBaseUrl();
+        var url = _container.GetCaddyHttpsBaseUrl("s1", "s2");
         Assert.StartsWith("https://", url);
-        Assert.Contains(_container.Hostname, url);
+        Assert.Contains("s1.s2", url);
         Assert.True(Uri.TryCreate(url, UriKind.Absolute, out _));
     }
 
@@ -96,9 +97,9 @@ public class CaddyInTheMiddleContainerTest(CaddyInTheMiddleContainerFixture fixt
     [Fact]
     public void ShouldReturnValidAdminBaseUrl()
     {
-        var url = _container.GetAdminBaseUrl();
-        Assert.StartsWith("http://", url);
-        Assert.Contains(_container.Hostname, url);
+        var url = _container.GetAdminBaseUrl("utils", "citm");
+        Assert.StartsWith("https://", url);
+        Assert.Contains("utils.citm", url);
         Assert.True(Uri.TryCreate(url, UriKind.Absolute, out _));
     }
 

@@ -18,6 +18,8 @@ jobs:
       TAG: ${{ github.event.release.tag_name }}
     steps:
       - uses: actions/checkout@main
+      - name: Strip 'v' prefix from tag
+        run: echo "TAG=${TAG#v}" >> $GITHUB_ENV
       - name: Set up Docker
         uses: docker/setup-docker-action@master
         with:
