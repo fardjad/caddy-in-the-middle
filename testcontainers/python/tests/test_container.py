@@ -67,7 +67,7 @@ class TestCitmContainer:
 
     def test_should_return_valid_admin_base_url(self, citm_fixture):
         url = citm_fixture.get_admin_base_url()
-        assert url.startswith("http://")
+        assert url.startswith("https://")
         assert ":" in url
 
     def test_should_create_configured_http_client_handler(self, citm_fixture):
@@ -82,3 +82,33 @@ class TestCitmContainer:
         assert session.proxies["https"] == proxy_url
 
         assert session.verify is False
+
+    def test_url_generation_with_subdomains(self):
+        from unittest.mock import MagicMock
+
+        container = CitmContainer()
+        container.get_container_host_ip = MagicMock(return_value="127.0.0.1")
+        container.get_exposed_port = MagicMock(side_effect=lambda port: port)
+
+        # Test loopback conversion
+        assert container._get_hostname_with_subdomains() == "localhost"
+        assert (
+            container._get_hostname_with_subdomains("api", "v1") == "api.v1.localhost"
+        )
+
+        # Test non-loopback IPs
+        container.get_container_host_ip = MagicMock(return_value="192.168.1.10")
+        assert container._get_hostname_with_subdomains() == "192.168.1.10"
+        assert container._get_hostname_with_subdomains("api") == "api.192.168.1.10"
+
+        # Test base URLs with subdomains
+        container.get_container_host_ip = MagicMock(return_value="127.0.0.1")
+        assert (
+            container.get_caddy_http_base_url("internal")
+            == "http://internal.localhost:80"
+        )
+        assert (
+            container.get_caddy_https_base_url("secure")
+            == "https://secure.localhost:443"
+        )
+        assert container.get_admin_base_url("admin") == "https://admin.localhost:3858"

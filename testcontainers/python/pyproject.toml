@@ -1,6 +1,6 @@
 [project]
 name = "caddy-in-the-middle"
-version = "0.4.4"
+version = "0.4.8"
 description = "Testcontainers module for CaddyInTheMiddle"
 readme = "README.md"
 requires-python = ">=3.9"

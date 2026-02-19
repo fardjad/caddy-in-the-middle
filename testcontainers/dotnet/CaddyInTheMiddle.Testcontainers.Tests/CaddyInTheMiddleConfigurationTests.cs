@@ -2,7 +2,7 @@ using System.Reflection;
 using DotNet.Testcontainers.Configurations;
 using JetBrains.Annotations;
 
-namespace Testcontainers.CaddyInTheMiddle.Tests;
+namespace CaddyInTheMiddle.Testcontainers.Tests;
 
 [TestSubject(typeof(CaddyInTheMiddleBuilder))]
 public class CaddyInTheMiddleConfigurationTests

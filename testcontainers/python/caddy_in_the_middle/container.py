@@ -105,11 +105,25 @@ class CitmContainer(DockerContainer):
         self._kwargs["labels"] = labels
         return self
 
-    def get_caddy_http_base_url(self) -> str:
-        return f"http://{self.get_container_host_ip()}:{self.get_exposed_port(80)}"
+    def _get_hostname_with_subdomains(self, *subdomains: str) -> str:
+        ip = self.get_container_host_ip()
 
-    def get_caddy_https_base_url(self) -> str:
-        return f"https://{self.get_container_host_ip()}:{self.get_exposed_port(443)}"
+        # Convert loopback IPs to localhost
+        if ip == "127.0.0.1" or ip == "::1":
+            base_hostname = "localhost"
+        else:
+            base_hostname = ip
+
+        if not subdomains:
+            return base_hostname
+
+        return f"{'.'.join(subdomains)}.{base_hostname}"
+
+    def get_caddy_http_base_url(self, *subdomains: str) -> str:
+        return f"http://{self._get_hostname_with_subdomains(*subdomains)}:{self.get_exposed_port(80)}"
+
+    def get_caddy_https_base_url(self, *subdomains: str) -> str:
+        return f"https://{self._get_hostname_with_subdomains(*subdomains)}:{self.get_exposed_port(443)}"
 
     def get_http_proxy_address(self) -> str:
         return f"http://{self.get_container_host_ip()}:{self.get_exposed_port(8380)}"
@@ -117,8 +131,8 @@ class CitmContainer(DockerContainer):
     def get_socks_proxy_address(self) -> str:
         return f"socks5://{self.get_container_host_ip()}:{self.get_exposed_port(8381)}"
 
-    def get_admin_base_url(self) -> str:
-        return f"http://{self.get_container_host_ip()}:{self.get_exposed_port(3858)}"
+    def get_admin_base_url(self, *subdomains: str) -> str:
+        return f"https://{self._get_hostname_with_subdomains(*subdomains)}:{self.get_exposed_port(3858)}"
 
     def create_client(
         self, ignore_ssl_errors: bool = True, **kwargs

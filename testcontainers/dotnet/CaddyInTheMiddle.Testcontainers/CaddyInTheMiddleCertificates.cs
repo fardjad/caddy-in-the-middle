@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Testcontainers.CaddyInTheMiddle;
+namespace CaddyInTheMiddle.Testcontainers;
 
 /// <summary>
 /// Helper class for generating self-signed certificates for testing.

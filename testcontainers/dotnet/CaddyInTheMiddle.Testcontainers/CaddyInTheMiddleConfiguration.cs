@@ -2,7 +2,7 @@ using Docker.DotNet.Models;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
 
-namespace Testcontainers.CaddyInTheMiddle;
+namespace CaddyInTheMiddle.Testcontainers;
 
 /// <summary>
 /// Configuration for the CaddyInTheMiddle container.
