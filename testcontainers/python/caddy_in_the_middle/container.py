@@ -97,6 +97,7 @@ class CitmContainer(DockerContainer):
         self._kwargs["labels"] = labels
 
         self._kwargs["network"] = network_name
+        self.with_env("CITM_NETWORK", network_name)
         return self
 
     def with_dns_names(self, *names: str) -> "CitmContainer":

@@ -1,10 +1,24 @@
 from docker import DockerClient
+import os
 
 
 def get_citm_dns_entries(docker_client: DockerClient):
-    containers = docker_client.containers.list(
-        all=False, filters={"label": ["citm_network", "citm_dns_names"]}
-    )
+    citm_network_env = os.getenv("CITM_NETWORK")
+
+    if citm_network_env:
+        containers = docker_client.containers.list(
+            all=False,
+            filters={
+                "label": [
+                    "citm_dns_names",
+                    f"citm_network={citm_network_env}",
+                ]
+            },
+        )
+    else:
+        containers = docker_client.containers.list(
+            all=False, filters={"label": ["citm_network", "citm_dns_names"]}
+        )
 
     def to_dns_entries(container):
         network_name = container.labels.get("citm_network")

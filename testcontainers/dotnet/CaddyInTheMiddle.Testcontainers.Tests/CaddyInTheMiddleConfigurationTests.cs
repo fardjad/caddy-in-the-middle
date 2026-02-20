@@ -58,6 +58,7 @@ public class CaddyInTheMiddleConfigurationTests
             .GetConfiguration();
 
         Assert.Contains(configuration.Networks, n => n.Name == "some-network");
+        Assert.Equal("some-network", configuration.Environments["CITM_NETWORK"]);
         Assert.Equal("some-network", configuration.Labels["citm_network"]);
     }
 

@@ -44,6 +44,7 @@ class TestCitmConfiguration:
         container.with_citm_network(network_name)
 
         assert container._kwargs.get("network") == network_name
+        assert container.env["CITM_NETWORK"] == network_name
 
         labels = container._kwargs.get("labels", {})
         assert labels.get("citm_network") == network_name

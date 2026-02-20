@@ -89,6 +89,7 @@ public class CaddyInTheMiddleBuilder : ContainerBuilder<CaddyInTheMiddleBuilder,
     {
         return Merge(DockerResourceConfiguration, new CaddyInTheMiddleConfiguration(citmNetwork: citmNetwork))
             .WithNetwork(citmNetwork)
+            .WithEnvironment("CITM_NETWORK", citmNetwork)
             .WithLabel("citm_network", citmNetwork);
     }
 
