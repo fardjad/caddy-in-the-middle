@@ -1,3 +1,5 @@
+set dotenv-load := true
+
 # show this message
 help:
     @just --list
