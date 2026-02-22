@@ -1,0 +1,40 @@
+name: getting-started-service2
+
+services:
+  citm-sidecar:
+    image: fardjad/citm:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../certs:/certs:ro
+    environment:
+      - CITM_NETWORK=my-citm-network
+    networks:
+      - my-citm-network
+
+  service2:
+    image: python:3-alpine
+    volumes:
+      - ../certs:/certs:ro
+    environment:
+      # Tell Python to trust the custom Root CA mounted below
+      - SSL_CERT_FILE=/certs/rootCA.pem
+    network_mode: "service:citm-sidecar"
+    command: |
+      python -u -c '
+      import urllib.request
+      import time
+
+      while True:
+          try:
+              print("Sending request to https://alt-service1.internal...")
+              req = urllib.request.urlopen("https://alt-service1.internal")
+              print(f"Success! Status: {req.getcode()}")
+          except Exception as e:
+              print(f"Request failed: {e}")
+          time.sleep(5)
+      '
+
+networks:
+  my-citm-network:
+    name: my-citm-network
+    external: true

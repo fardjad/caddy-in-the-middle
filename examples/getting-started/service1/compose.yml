@@ -1,0 +1,27 @@
+name: getting-started-service1
+
+services:
+  citm-sidecar:
+    image: fardjad/citm:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../certs:/certs:ro
+      - ./caddy-conf.d:/etc/caddy/conf.d:ro
+    environment:
+      - CITM_NETWORK=my-citm-network
+    networks:
+      - my-citm-network
+    labels:
+      # register this service in the CITM network
+      - citm_network=my-citm-network
+      - citm_dns_names=service1.internal,alt-service1.internal
+
+  service1:
+    image: traefik/whoami
+    network_mode: "service:citm-sidecar"
+    command: --port 8080
+
+networks:
+  my-citm-network:
+    name: my-citm-network
+    external: true

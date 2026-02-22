@@ -86,9 +86,18 @@ format-shellscripts: (_check-tools "shfmt")
     set -euo pipefail
     shfmt -s -w .
 
-check: check-justfiles check-dockerfiles check-composefiles check-caddyfiles check-python check-shellscripts
+format-markdown *args: (_check-tools "uv")
+    #!/usr/bin/env bash
 
-format: format-justfiles format-dockerfiles format-composefiles format-caddyfiles format-python format-shellscripts
+    set -euo pipefail
+    uv tool run mdformat --wrap 80 {{ args }} $(find . -maxdepth 5 -type f -name '*.md' -not -path "*/.venv/*" -not -path "*/.git/*" -not -path "*/site/*" -not -path "*/docs/site/*")
+
+check-markdown:
+    @just format-markdown --check
+
+check: check-justfiles check-dockerfiles check-composefiles check-caddyfiles check-python check-shellscripts check-markdown
+
+format: format-justfiles format-dockerfiles format-composefiles format-caddyfiles format-python format-shellscripts format-markdown
 
 test: check
 

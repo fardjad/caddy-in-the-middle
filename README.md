@@ -4,51 +4,61 @@
 
 ## Synopsis
 
-Caddy in the Middle is a containerized toolkit that streamlines the setup, 
+Caddy in the Middle is a containerized toolkit that streamlines the setup,
 inspection, and debugging of HTTP(S) communication between services.
 
-Working with distributed systems often involves complex debugging scenarios: 
-certificate management, proxy configuration, traffic inspection, and endpoint 
-mocking typically require significant manual setup. This project consolidates 
-these tools into a containerized environment that enables developers to become 
+Working with distributed systems often involves complex debugging scenarios:
+certificate management, proxy configuration, traffic inspection, and endpoint
+mocking typically require significant manual setup. This project consolidates
+these tools into a containerized environment that enables developers to become
 productive within minutes.
 
 ## Why?
 
 During development and debugging, common requirements include:
 
-* Enabling HTTPS between services without certificate management overhead
-* Routing traffic through a controllable proxy
-* Inspecting and capturing requests and responses
-* Mocking endpoints for testing scenarios
-* Visualizing service communication patterns
+- Enabling HTTPS between services without certificate management overhead
+- Routing traffic through a controllable proxy
+- Inspecting and capturing requests and responses
+- Mocking endpoints for testing scenarios
+- Visualizing service communication patterns
 
-Caddy in the Middle provides visibility and control over inter-service 
+Caddy in the Middle provides visibility and control over inter-service
 communication to address these needs.
 
 ## Features
 
 Caddy in the Middle provides the following capabilities:
 
-- **Automatic HTTPS Configuration** - Generates a Root CA for import into clients. 
+- **Automatic HTTPS Configuration** - Generates a Root CA for import into
+  clients.
 
-- **Preconfigured Reverse Proxy with Traffic Capture** - Leverages Caddy as a reverse proxy and integrates mitmproxy for automatic traffic capture and inspection.
+- **Preconfigured Reverse Proxy with Traffic Capture** - Leverages Caddy as a
+  reverse proxy and integrates mitmproxy for automatic traffic capture and
+  inspection.
 
-- **Lightweight Mocking Framework** - Built on top of mitmproxy for flexible endpoint mocking.
+- **Lightweight Mocking Framework** - Built on top of mitmproxy for flexible
+  endpoint mocking.
 
-- **Traffic Visualization Tools** [In Progress] - Visual tools for understanding service communication patterns.
+- **Traffic Visualization Tools** [In Progress] - Visual tools for understanding
+  service communication patterns.
 
 ## Usage
 
 1. Make sure CITM containers are part of the same network.
-2. (Optional) Set the environment variable `CITM_NETWORK` on the CITM container to limit container discovery to a specific logical network name.
-   - When set, only containers with the label `citm_network=<value of CITM_NETWORK>` will be discovered.
-   - When not set, all containers with the required CITM labels will be considered.
-3. Add CITM to all services (side-car pattern, use the CITM service network for all other containers):
-    1. Add the CITM container.
-    2. Mount the Docker socket (`/var/run/docker.sock:/var/run/docker.sock:ro`).
-    3. Set the label `citm_network` to the name of a shared network with other compose projects.
-    4. Set the label `citm_dns_names` and include the list of the DNS names in a comma separated list.
+1. (Optional) Set the environment variable `CITM_NETWORK` on the CITM container
+   to limit container discovery to a specific logical network name.
+   - When set, only containers with the label
+     `citm_network=<value of CITM_NETWORK>` will be discovered.
+   - When not set, all containers with the required CITM labels will be
+     considered.
+1. Add CITM to all services (side-car pattern, use the CITM service network for
+   all other containers):
+   1. Add the CITM container.
+   1. Mount the Docker socket (`/var/run/docker.sock:/var/run/docker.sock:ro`).
+   1. Set the label `citm_network` to the name of a shared network with other
+      compose projects.
+   1. Set the label `citm_dns_names` and include the list of the DNS names in a
+      comma separated list.
 
-> [!TIP]
-> A working example is included in the [example](./example/) directory.
+> [!TIP] A working example is included in the [example](./example/) directory.

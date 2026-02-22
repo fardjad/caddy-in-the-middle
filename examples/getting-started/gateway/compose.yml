@@ -1,0 +1,27 @@
+name: getting-started-gateway
+
+services:
+  citm:
+    image: fardjad/citm:latest
+    volumes:
+      # Required for service discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # A directory containing rootCA.pem and rootCA-key.pem
+      - ../certs:/certs:ro
+      # A directory containing Caddy config files
+      - ./caddy-conf.d:/etc/caddy/conf.d:ro
+    environment:
+      # discover the services in this network
+      - CITM_NETWORK=my-citm-network
+    ports:
+      # Caddy ports
+      - '0.0.0.0:80:80'
+      - '0.0.0.0:443:443'
+      - '0.0.0.0:443:443/udp'
+    networks:
+      - my-citm-network
+
+networks:
+  my-citm-network:
+    name: my-citm-network
+    external: true
