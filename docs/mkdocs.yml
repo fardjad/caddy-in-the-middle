@@ -1,0 +1,29 @@
+site_name: Caddy in the Middle
+docs_dir: src
+site_url: https://fardjad.com/caddy-in-the-middle/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      media: "(prefers-color-scheme: light)"
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      media: "(prefers-color-scheme: dark)"
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["../testcontainers/python"]
+
+nav:
+  - Home: index.md
+  - Tutorials:
+    - Getting Started: tutorials/getting-started.md

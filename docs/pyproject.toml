@@ -1,0 +1,10 @@
+[project]
+name = "caddy-in-the-middle-docs"
+version = "0.1.0"
+description = "Documentation for Caddy in the Middle"
+requires-python = ">=3.10"
+dependencies = [
+    "zensical>=0.0.23",
+    "mkdocs-material>=9.0.0",
+    "mkdocstrings[python]>=0.24.0",
+]

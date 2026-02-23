@@ -142,3 +142,15 @@ upgrade-python-deps *args:
     done
 
 publish-testcontainers: publish-testcontainers-python publish-testcontainers-dotnet
+
+docs-serve: (_check-tools "uv")
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd docs
+    uv run zensical serve
+
+docs-build: (_check-tools "uv")
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd docs
+    uv run zensical build
