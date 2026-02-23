@@ -49,5 +49,4 @@ ______________________________________________________________________
 ## Next Steps
 
 The **[Getting Started](./tutorials/getting-started.md)** tutorial provides
-step-by-step instructions to initialize a local instance and configure
-fundamental proxy features.
+step-by-step instructions for a minimal setup.
