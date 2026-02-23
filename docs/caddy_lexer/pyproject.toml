@@ -1,0 +1,6 @@
+[project]
+name = "caddy-lexer"
+version = "0.1.0"
+
+[project.entry-points."pygments.lexers"]
+caddy = "caddy_lexer:CaddyLexer"
