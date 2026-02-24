@@ -19,11 +19,8 @@ if [ "${DEVCONTAINER}" == "false" ]; then
 fi
 EOF
 
-FROM caddy:2-builder AS caddy-builder
-
-RUN xcaddy build \
-    --with github.com/abiosoft/caddy-yaml \
-    --with github.com/caddyserver/transform-encoder
+# FIXME: TLS breaks on 2.11.1
+FROM caddy:2.10.2 AS caddy
 
 FROM mitmproxy/mitmproxy
 
@@ -104,7 +101,7 @@ EOF
 
 # Caddy
 
-COPY --from=caddy-builder /usr/bin/caddy /usr/bin/caddy
+COPY --from=caddy /usr/bin/caddy /usr/bin/caddy
 RUN mkdir -p /etc/caddy && mkdir -p /etc/caddy/conf.d
 COPY ./caddy/Caddyfile /etc/caddy/Caddyfile
 
