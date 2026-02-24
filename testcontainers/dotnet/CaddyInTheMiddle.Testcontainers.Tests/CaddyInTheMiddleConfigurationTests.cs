@@ -5,9 +5,10 @@ using JetBrains.Annotations;
 namespace CaddyInTheMiddle.Testcontainers.Tests;
 
 [TestSubject(typeof(CaddyInTheMiddleBuilder))]
+[TestClass]
 public class CaddyInTheMiddleConfigurationTests
 {
-    [Fact]
+    [TestMethod]
     public void ShouldSetCertsDirectory()
     {
         var configuration = new CaddyInTheMiddleBuilder()
@@ -15,16 +16,16 @@ public class CaddyInTheMiddleConfigurationTests
             .Build()
             .GetConfiguration();
 
-        Assert.Contains(configuration.Mounts, m => m.Source == "/tmp/certs" && m.Target == "/certs");
+        Assert.Contains(m => m.Source == "/tmp/certs" && m.Target == "/certs", configuration.Mounts);
     }
 
-    [Fact]
+    [TestMethod]
     public void ShouldThrowIfCertsDirectoryIsNotSet()
     {
         Assert.Throws<ArgumentException>(() => { new CaddyInTheMiddleBuilder().Build().GetConfiguration(); });
     }
 
-    [Fact]
+    [TestMethod]
     public void ShouldSetMocksDirectory()
     {
         var configuration = new CaddyInTheMiddleBuilder()
@@ -33,10 +34,10 @@ public class CaddyInTheMiddleConfigurationTests
             .Build()
             .GetConfiguration();
 
-        Assert.Contains(configuration.Mounts, m => m.Source == "/tmp/mocks" && m.Target == "/citm-mocks/");
+        Assert.Contains(m => m.Source == "/tmp/mocks" && m.Target == "/citm-mocks/", configuration.Mounts);
     }
 
-    [Fact]
+    [TestMethod]
     public void ShouldSetCaddyfileDirectory()
     {
         var configuration = new CaddyInTheMiddleBuilder()
@@ -45,10 +46,10 @@ public class CaddyInTheMiddleConfigurationTests
             .Build()
             .GetConfiguration();
 
-        Assert.Contains(configuration.Mounts, m => m.Source == "/tmp/caddy" && m.Target == "/etc/caddy/conf.d");
+        Assert.Contains(m => m.Source == "/tmp/caddy" && m.Target == "/etc/caddy/conf.d", configuration.Mounts);
     }
 
-    [Fact]
+    [TestMethod]
     public void ShouldSetCitmNetwork()
     {
         var configuration = new CaddyInTheMiddleBuilder()
@@ -57,12 +58,12 @@ public class CaddyInTheMiddleConfigurationTests
             .Build()
             .GetConfiguration();
 
-        Assert.Contains(configuration.Networks, n => n.Name == "some-network");
-        Assert.Equal("some-network", configuration.Environments["CITM_NETWORK"]);
-        Assert.Equal("some-network", configuration.Labels["citm_network"]);
+        Assert.IsTrue(configuration.Networks.Any(n => n.Name == "some-network"));
+        Assert.AreEqual("some-network", configuration.Environments["CITM_NETWORK"]);
+        Assert.AreEqual("some-network", configuration.Labels["citm_network"]);
     }
 
-    [Fact]
+    [TestMethod]
     public void ShouldMountDockerSocketByDefault()
     {
         var configuration = new CaddyInTheMiddleBuilder()
@@ -70,10 +71,10 @@ public class CaddyInTheMiddleConfigurationTests
             .Build()
             .GetConfiguration();
 
-        Assert.Contains(configuration.Mounts, m => m.Source == "/var/run/docker.sock" && m.Target == "/var/run/docker.sock");
+        Assert.Contains(m => m.Source == "/var/run/docker.sock" && m.Target == "/var/run/docker.sock", configuration.Mounts);
     }
 
-    [Fact]
+    [TestMethod]
     public void ShouldSetDnsNames()
     {
         var configuration = new CaddyInTheMiddleBuilder()
@@ -82,10 +83,10 @@ public class CaddyInTheMiddleConfigurationTests
             .Build()
             .GetConfiguration();
 
-        Assert.Equal("name1,name2", configuration.Labels["citm_dns_names"]);
+        Assert.AreEqual("name1,name2", configuration.Labels["citm_dns_names"]);
     }
 
-    [Fact]
+    [TestMethod]
     public void ShouldSetDefaultMockPaths()
     {
         var configuration = new CaddyInTheMiddleBuilder()
@@ -94,10 +95,10 @@ public class CaddyInTheMiddleConfigurationTests
             .Build()
             .GetConfiguration();
 
-        Assert.Equal("/citm-mocks/**/*.mako", configuration.Environments["MOCK_PATHS"]);
+        Assert.AreEqual("/citm-mocks/**/*.mako", configuration.Environments["MOCK_PATHS"]);
     }
 
-    [Fact]
+    [TestMethod]
     public void ShouldOverrideDefaultMockPaths()
     {
         var configuration = new CaddyInTheMiddleBuilder()
@@ -107,10 +108,10 @@ public class CaddyInTheMiddleConfigurationTests
             .Build()
             .GetConfiguration();
 
-        Assert.Equal("/citm-mocks/custom-path/*.mako", configuration.Environments["MOCK_PATHS"]);
+        Assert.AreEqual("/citm-mocks/custom-path/*.mako", configuration.Environments["MOCK_PATHS"]);
     }
 
-    [Fact]
+    [TestMethod]
     public void ShouldThrowWhenMockPathsAreOutsideOfTheMountedDirectory()
     {
         Assert.Throws<ArgumentException>(() =>

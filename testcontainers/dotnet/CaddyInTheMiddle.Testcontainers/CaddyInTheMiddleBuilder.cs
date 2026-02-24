@@ -13,7 +13,7 @@ public class CaddyInTheMiddleBuilder : ContainerBuilder<CaddyInTheMiddleBuilder,
     /// <summary>
     /// The Docker image to use for the container.
     /// </summary>
-    public static readonly string CaddyInTheMiddleImage = $"fardjad/citm:{typeof(CaddyInTheMiddleBuilder).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
+    public static readonly string CaddyInTheMiddleImage = $"fardjad/citm:{typeof(CaddyInTheMiddleBuilder).Assembly.GetName().Version?.ToString(3) ?? "latest"}";
 
     /// <summary>
     /// The exposed HTTP port (80).
