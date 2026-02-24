@@ -1,0 +1,27 @@
+set dotenv-load := true
+
+_check-tools *args:
+    #!/usr/bin/env bash
+    for tool in {{ args }}; do
+        if ! command -v "${tool}" &> /dev/null; then
+            echo "Error: ${tool} is not in your PATH." >&2
+            exit 1
+        fi
+    done
+
+test: (_check-tools "dotnet")
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just --justfile ../../justfile build
+    dotnet test
+
+publish: (_check-tools "dotnet")
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "${NUGET_API_KEY:-}" ]; then
+        echo "Error: NUGET_API_KEY environment variable is not set."
+        echo "Please export NUGET_API_KEY=<your-api-key> and try again."
+        exit 1
+    fi
+    dotnet pack CaddyInTheMiddle.Testcontainers/CaddyInTheMiddle.Testcontainers.csproj -c Release
+    dotnet nuget push CaddyInTheMiddle.Testcontainers/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate

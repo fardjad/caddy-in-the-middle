@@ -113,23 +113,15 @@ publish-testcontainers-python:
     set -euo pipefail
 
     cd testcontainers/python
-    uv build
-    uv publish
+    just publish
 
 publish-testcontainers-dotnet:
     #!/usr/bin/env bash
 
     set -euo pipefail
 
-    if [ -z "${NUGET_API_KEY:-}" ]; then
-        echo "Error: NUGET_API_KEY environment variable is not set."
-        echo "Please export NUGET_API_KEY=<your-api-key> and try again."
-        exit 1
-    fi
-
     cd testcontainers/dotnet
-    dotnet pack CaddyInTheMiddle.Testcontainers/CaddyInTheMiddle.Testcontainers.csproj -c Release
-    dotnet nuget push CaddyInTheMiddle.Testcontainers/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
+    just publish
 
 upgrade-python-deps *args:
     #!/usr/bin/env bash
@@ -138,7 +130,7 @@ upgrade-python-deps *args:
     for f in $(find . -maxdepth 5 -type f -name 'pyproject.toml'); do
         dir=$(dirname "$f")
         echo "Processing $dir..."
-        python3 hack/upgrade_deps.py "$dir"
+        python3 hack/upgrade_deps.py "$dir" {{ args }}
     done
 
 publish-testcontainers: publish-testcontainers-python publish-testcontainers-dotnet
@@ -154,3 +146,8 @@ docs-build: (_check-tools "uv")
     set -euo pipefail
     cd docs
     uv run zensical build
+
+build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    docker build -t "fardjad/citm:$(cat VERSION.txt)" .
