@@ -19,7 +19,8 @@ if [ "${DEVCONTAINER}" == "false" ]; then
 fi
 EOF
 
-# FIXME: TLS breaks on 2.11.1
+# 2.11.1 breaks CITM
+# https://github.com/caddyserver/caddy/issues/7520
 FROM caddy:2.10.2 AS caddy
 
 FROM mitmproxy/mitmproxy
