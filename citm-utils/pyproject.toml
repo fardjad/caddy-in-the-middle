@@ -10,3 +10,8 @@ dependencies = [
     "pip-system-certs>=5.3",
     "requests>=2.32.5",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

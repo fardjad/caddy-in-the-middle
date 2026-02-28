@@ -1,9 +1,13 @@
+import sys
 import tempfile
 import time
 import unittest
 from pathlib import Path
 
 from dnslib import DNSRecord, QTYPE
+
+# Ensure tests can import modules directly from the citm-utils source directory.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from dns_forwarder import (
     DiscoveryCache,

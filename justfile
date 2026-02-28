@@ -103,6 +103,12 @@ test:
     #!/usr/bin/env bash
     set -euo pipefail
 
+    echo "Running citm-utils tests"
+    (
+        cd citm-utils
+        uv run pytest
+    )
+
     example_dirs=$(find examples -mindepth 1 -maxdepth 1 -type d ! -name '.just' | sort)
 
     if [[ -z "$example_dirs" ]]; then
