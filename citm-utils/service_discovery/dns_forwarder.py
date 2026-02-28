@@ -14,7 +14,7 @@ from typing import Any
 import docker
 from dnslib import A, AAAA, DNSHeader, DNSRecord, QTYPE, RCODE, RR
 
-from service_discovery import DnsRecordSet, get_citm_dns_record_sets
+from .discovery import DnsRecordSet, get_citm_dns_record_sets
 
 ENV_CACHE_TTL_SECONDS = "CITM_DNS_CACHE_TTL_SECONDS"
 ENV_LISTEN_HOST = "CITM_DNS_LISTEN_HOST"

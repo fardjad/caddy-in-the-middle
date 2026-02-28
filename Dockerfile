@@ -154,7 +154,7 @@ stopsignal=TERM
 
 [program:citm-utils-dns-forwarder]
 directory=/citm-utils
-command=uv run python dns_forwarder.py
+command=uv run python -m service_discovery.dns_forwarder
 autostart=true
 autorestart=true
 startretries=3

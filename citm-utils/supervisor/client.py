@@ -3,6 +3,7 @@ import socket
 import http.client
 import xmlrpc.client
 import time
+from collections.abc import Callable
 from typing import Any, Dict, List, Optional
 
 # Internal: processes we never want to manage via the UI/API
@@ -32,7 +33,12 @@ def _rpc():
 
 
 def _start_with_retry(
-    server, name: str, *, retries: int = 5, delay_s: float = 0.3
+    server,
+    name: str,
+    *,
+    retries: int = 5,
+    delay_s: float = 0.3,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> None:
     """Start a Supervisor program with small retries for transient STOPPING states."""
     for attempt in range(retries):
@@ -45,13 +51,13 @@ def _start_with_retry(
                 return
             if "STILL_STOPPING" in msg or "STOPPING" in msg:
                 if attempt < retries - 1:
-                    time.sleep(delay_s)
+                    sleep(delay_s)
                     continue
                 raise
             raise
         except Exception:
             if attempt < retries - 1:
-                time.sleep(delay_s)
+                sleep(delay_s)
                 continue
             raise
 
@@ -77,9 +83,9 @@ class SupervisorError(Exception):
         self.details = details or ""
 
 
-def list_services() -> List[Dict[str, str]]:
+def list_services(*, rpc_factory: Callable[[], Any] = _rpc) -> List[Dict[str, str]]:
     try:
-        server = _rpc()
+        server = rpc_factory()
         procs = server.supervisor.getAllProcessInfo()
     except Exception as e:
         raise SupervisorError(
@@ -102,16 +108,22 @@ def list_services() -> List[Dict[str, str]]:
     return services
 
 
-def service_action(name: str, action: str) -> None:
+def service_action(
+    name: str,
+    action: str,
+    *,
+    rpc_factory: Callable[[], Any] = _rpc,
+    sleep: Callable[[float], None] = time.sleep,
+) -> None:
     if action not in {"start", "stop", "restart"}:
         raise SupervisorError("Unsupported action", status_code=400)
     if name in _EXCLUDED_PROCESSES:
         raise SupervisorError("Unsupported service", status_code=400)
 
     try:
-        server = _rpc()
+        server = rpc_factory()
         if action == "start":
-            _start_with_retry(server, name)
+            _start_with_retry(server, name, sleep=sleep)
 
         elif action == "stop":
             # Only stop if currently running; EXITED/STOPPED/FATAL are already not running.
@@ -124,19 +136,19 @@ def service_action(name: str, action: str) -> None:
             # If it's running, stop first then start.
             if state == "RUNNING":
                 _stop_if_running(server, name)
-                _start_with_retry(server, name)
+                _start_with_retry(server, name, sleep=sleep)
 
             # If it's not running (EXITED/STOPPED/FATAL/UNKNOWN), just start it.
             elif state in {"EXITED", "STOPPED", "FATAL", "UNKNOWN"}:
-                _start_with_retry(server, name)
+                _start_with_retry(server, name, sleep=sleep)
 
             # Transient states: try to start with retry; if still not possible, bubble error.
             elif state in {"STARTING", "STOPPING", "BACKOFF"}:
-                _start_with_retry(server, name)
+                _start_with_retry(server, name, sleep=sleep)
 
             else:
                 # Default: attempt a start, letting Supervisor raise if invalid.
-                _start_with_retry(server, name)
+                _start_with_retry(server, name, sleep=sleep)
 
     except Exception as e:
         raise SupervisorError(
@@ -146,9 +158,13 @@ def service_action(name: str, action: str) -> None:
         )
 
 
-def restart_all() -> None:
+def restart_all(
+    *,
+    rpc_factory: Callable[[], Any] = _rpc,
+    sleep: Callable[[float], None] = time.sleep,
+) -> None:
     try:
-        server = _rpc()
+        server = rpc_factory()
         procs = server.supervisor.getAllProcessInfo()
         managed = [p for p in procs if _is_managed(p)]
 
@@ -163,7 +179,7 @@ def restart_all() -> None:
             name = p.get("name")
             if not name:
                 continue
-            _start_with_retry(server, name)
+            _start_with_retry(server, name, sleep=sleep)
 
     except Exception as e:
         raise SupervisorError(
