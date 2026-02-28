@@ -109,6 +109,12 @@ test:
         uv run pytest
     )
 
+    echo "Running mitmproxy script tests"
+    (
+        cd mitmproxy
+        just test
+    )
+
     example_dirs=$(find examples -mindepth 1 -maxdepth 1 -type d ! -name '.just' | sort)
 
     if [[ -z "$example_dirs" ]]; then

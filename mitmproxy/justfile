@@ -1,0 +1,15 @@
+set dotenv-load := true
+
+_check-tools *args:
+    #!/usr/bin/env bash
+    for tool in {{ args }}; do
+        if ! command -v "${tool}" &> /dev/null; then
+            echo "Error: ${tool} is not in your PATH." >&2
+            exit 1
+        fi
+    done
+
+test: (_check-tools "uv")
+    #!/usr/bin/env bash
+    set -euo pipefail
+    uv run pytest

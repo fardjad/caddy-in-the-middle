@@ -104,6 +104,8 @@ RUN mkdir -p /root/.mitmproxy
 COPY --chown=root:root --chmod=755 ./mitmproxy/start-mitmproxy.sh /usr/local/bin/start-mitmproxy
 COPY ./mitmproxy/rewrite-host.py /rewrite-host.py
 COPY ./mitmproxy/mock-responder.py /mock-responder.py
+COPY ./mitmproxy/rewrite_host /rewrite_host
+COPY ./mitmproxy/mock_responder /mock_responder
 
 COPY <<EOF /etc/supervisor/conf.d/mitmproxy.conf
 [program:mitmproxy]
