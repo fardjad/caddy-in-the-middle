@@ -90,8 +90,8 @@ The `CaddyInTheMiddleBuilder` provides a fluent API for customization:
 - **`WithCitmNetwork(string networkName)`**: Connects the container to a
   specific Docker network. This enables automatic service discovery: if other
   containers on this network have the `citm_dns_names` label, their DNS names
-  will be automatically resolved by the `dnsmasq` instance running inside the
-  CITM container.
+  will be automatically resolved by the internal DNS forwarder running inside
+  the CITM container.
 - **`WithDnsNames(params string[] names)`**: Sets the `citm_dns_names` label on
   the container. This leverages CITM's built-in service discovery to register
   these DNS names.

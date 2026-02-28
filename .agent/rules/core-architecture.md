@@ -25,7 +25,7 @@ The primary artifact shipped by this project is a multi-stage Docker/OCI image.
   handled by `supervisord`.
 - **Sub-processes**: The container orchestrates several distinct services:
   - `caddy` (reverse proxy)
-  - `dnsmasq` (DNS hijacking/routing)
+  - `citm-utils-dns-forwarder` (DNS hijacking/routing)
   - `mitmproxy` (traffic inspection and endpoint mocking)
   - `citm-utils` (custom Python-based helper web services and tools)
 

@@ -81,8 +81,8 @@ The `CitmContainer` provides a fluent API for customization:
 - **`with_citm_network(network_name: str)`**: Connects the container to a
   specific Docker network. This enables automatic service discovery: if other
   containers on this network have the `citm_dns_names` label, their DNS names
-  will be automatically resolved by the `dnsmasq` instance running inside the
-  CITM container.
+  will be automatically resolved by the internal DNS forwarder running inside
+  the CITM container.
 - **`with_dns_names(*names: str)`**: Sets the `citm_dns_names` label on the
   container. This leverages CITM's built-in service discovery to register these
   DNS names.

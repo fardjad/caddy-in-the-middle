@@ -3,6 +3,7 @@ name = "citm-utils"
 version = "0.1.0"
 requires-python = ">=3.14"
 dependencies = [
+    "dnslib>=0.9.26",
     "docker>=7.1.0",
     "flask>=3.1.3",
     "gunicorn>=25.1.0",

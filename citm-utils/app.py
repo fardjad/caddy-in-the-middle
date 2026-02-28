@@ -14,6 +14,7 @@ import docker
 docker_client = docker.from_env()
 
 app = Flask(__name__)
+app.json.compact = False
 
 
 @app.route("/supervisor", methods=["GET"])
@@ -83,36 +84,93 @@ def get_info():
 
 @app.route("/health", methods=["GET"])
 def get_health():
-
-    checks = [
-        ("https://citm.internal:3858", 404),
-        ("https://mitm.citm.internal:3858", 200),
-    ]
-
     results = []
 
-    for url, expected_status in checks:
+    try:
+        docker_ping = docker_client.ping()
+        results.append(
+            {
+                "check": "docker_connection",
+                "ok": bool(docker_ping),
+                "actual": docker_ping,
+            }
+        )
+    except Exception as e:
+        results.append(
+            {
+                "check": "docker_connection",
+                "ok": False,
+                "error": str(e),
+            }
+        )
+
+    dns_name = "citm.internal"
+    expected_ipv4 = "127.0.0.1"
+
+    try:
+        resolved_ips = sorted(
+            {
+                info[4][0]
+                for info in socket.getaddrinfo(
+                    dns_name,
+                    None,
+                    family=socket.AF_INET,
+                )
+            }
+        )
+        results.append(
+            {
+                "check": "dns_forwarder_resolution",
+                "name": dns_name,
+                "expected_ipv4": expected_ipv4,
+                "resolved_ipv4": resolved_ips,
+                "ok": expected_ipv4 in resolved_ips,
+            }
+        )
+    except Exception as e:
+        results.append(
+            {
+                "check": "dns_forwarder_resolution",
+                "name": dns_name,
+                "expected_ipv4": expected_ipv4,
+                "ok": False,
+                "error": str(e),
+            }
+        )
+
+    service_checks = [
+        {
+            "check": "caddy_serving",
+            "url": "https://citm.internal:3858",
+            "expected_status": 404,
+        },
+        {
+            "check": "mitmproxy_serving",
+            "url": "https://mitm.citm.internal:3858",
+            "expected_status": 200,
+        },
+    ]
+
+    for service_check in service_checks:
         try:
-            resp = requests.get(
-                url,
-                timeout=2,
-            )
-            ok = resp.status_code == expected_status
+            response = requests.get(service_check["url"], timeout=2)
             results.append(
                 {
-                    "url": url,
-                    "expected": expected_status,
-                    "actual": resp.status_code,
-                    "ok": ok,
+                    "check": service_check["check"],
+                    "url": service_check["url"],
+                    "expected_status": service_check["expected_status"],
+                    "actual_status": response.status_code,
+                    "ok": response.status_code == service_check["expected_status"],
                 }
             )
         except Exception as e:
             results.append(
                 {
-                    "url": url,
-                    "expected": expected_status,
-                    "error": str(e),
+                    "check": service_check["check"],
+                    "url": service_check["url"],
+                    "expected_status": service_check["expected_status"],
                     "ok": False,
+                    "error": str(e),
                 }
             )
 

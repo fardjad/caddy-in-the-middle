@@ -1,66 +1,104 @@
-from docker import DockerClient
 import os
+from collections import defaultdict
+from dataclasses import dataclass
+
+from docker import DockerClient
 
 
-def get_citm_dns_entries(docker_client: DockerClient):
-    citm_network_env = os.getenv("CITM_NETWORK")
+@dataclass(frozen=True)
+class DnsRecordSet:
+    ipv4: tuple[str, ...]
+    ipv6: tuple[str, ...]
 
-    if citm_network_env:
-        containers = docker_client.containers.list(
-            all=False,
-            filters={
-                "label": [
-                    "citm_dns_names",
-                    f"citm_network={citm_network_env}",
-                ]
-            },
-        )
-    else:
-        containers = docker_client.containers.list(
-            all=False, filters={"label": ["citm_network", "citm_dns_names"]}
-        )
 
-    def to_dns_entries(container):
-        network_name = container.labels.get("citm_network")
-        if not network_name:
-            return {}
+def _normalize_dns_name(name: str) -> str:
+    return name.strip().lower().rstrip(".")
 
-        network = container.attrs["NetworkSettings"]["Networks"].get(network_name)
+
+def _get_discovery_network(explicit_network: str | None = None) -> str | None:
+    if explicit_network:
+        return explicit_network
+    return os.getenv("CITM_DNS_NETWORK") or os.getenv("CITM_NETWORK")
+
+
+def _list_discoverable_containers(
+    docker_client: DockerClient, *, network_name: str | None
+):
+    filters = (
+        {
+            "label": [
+                "citm_dns_names",
+                f"citm_network={network_name}",
+            ]
+        }
+        if network_name
+        else {"label": ["citm_network", "citm_dns_names"]}
+    )
+    containers = docker_client.containers.list(all=False, filters=filters)
+    return sorted(containers, key=lambda container: container.id)
+
+
+def _to_dns_names(raw_names: str) -> list[str]:
+    return [
+        normalized
+        for name in raw_names.split(",")
+        if (normalized := _normalize_dns_name(name))
+    ]
+
+
+def get_citm_dns_record_sets(
+    docker_client: DockerClient, *, network_name: str | None = None
+) -> dict[str, DnsRecordSet]:
+    selected_network = _get_discovery_network(network_name)
+    containers = _list_discoverable_containers(
+        docker_client, network_name=selected_network
+    )
+
+    records: dict[str, dict[str, set[str]]] = defaultdict(
+        lambda: {"ipv4": set(), "ipv6": set()}
+    )
+
+    for container in containers:
+        container_network = container.labels.get("citm_network")
+        if not container_network:
+            continue
+        if selected_network and container_network != selected_network:
+            continue
+
+        network = container.attrs["NetworkSettings"]["Networks"].get(container_network)
         if not network:
-            return {}
+            continue
 
-        ip = network["IPAddress"]
+        ipv4 = (network.get("IPAddress") or "").strip()
+        ipv6 = (network.get("GlobalIPv6Address") or "").strip()
 
-        dns_names = [
-            name.strip()
-            for name in container.labels.get("citm_dns_names", "").split(",")
-            if len(name.strip()) > 0
-        ]
+        if not ipv4 and not ipv6:
+            continue
 
-        return {name: ip for name in dns_names}
+        dns_names = _to_dns_names(container.labels.get("citm_dns_names", ""))
+        for dns_name in dns_names:
+            if ipv4:
+                records[dns_name]["ipv4"].add(ipv4)
+            if ipv6:
+                records[dns_name]["ipv6"].add(ipv6)
 
     return {
-        name: ip
-        for container in containers
-        for name, ip in to_dns_entries(container).items()
+        dns_name: DnsRecordSet(
+            ipv4=tuple(sorted(families["ipv4"])),
+            ipv6=tuple(sorted(families["ipv6"])),
+        )
+        for dns_name, families in sorted(records.items())
     }
 
 
-def watch_container_lifecycle(
-    docker_client: DockerClient, callback: function, exit_callback: function
-):
-    api = docker_client.api
-
-    try:
-        for event in api.events(decode=True):
-            if event["Type"] != "container":
-                continue
-
-            if event["Action"] not in set(["start", "stop"]):
-                continue
-
-            callback()
-    except KeyboardInterrupt:
-        exit_callback()
-    finally:
-        api.close()
+def get_citm_dns_entries(
+    docker_client: DockerClient, *, network_name: str | None = None
+) -> dict[str, dict[str, list[str]]]:
+    records = get_citm_dns_record_sets(docker_client, network_name=network_name)
+    return {
+        dns_name: {
+            "ipv4": list(record_set.ipv4),
+            "ipv6": list(record_set.ipv6),
+        }
+        for dns_name, record_set in records.items()
+    }

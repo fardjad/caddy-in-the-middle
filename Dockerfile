@@ -69,37 +69,6 @@ serverurl=unix:///var/run/supervisor.sock
 files = /etc/supervisor/conf.d/*.conf
 EOF
 
-# Dnsmasq
-
-RUN <<EOF
-apt-get update -y
-apt-get install -y dnsmasq
-mkdir -p /etc/default
-echo "CONFIG_DIR=/etc/dnsmasq.d,.dpkg-dist,.dpkg-old,.dpkg-new\nIGNORE_RESOLVCONF=yes" >/etc/default/dnsmasq
-rm -f /etc/dnsmasq.conf
-rm -rf /etc/dnsmasq.d
-mkdir -p /etc/dnsmasq.d /etc/dnsmasq-user.d
-EOF
-
-COPY ./dnsmasq/dnsmasq.conf /etc/dnsmasq.conf
-COPY --chown=root:root --chmod=755 ./dnsmasq/start-dnsmasq.sh /usr/local/sbin/start-dnsmasq
-
-COPY <<EOF /etc/supervisor/conf.d/dnsmasq.conf
-[program:dnsmasq]
-command=/usr/local/sbin/start-dnsmasq
-autostart=true
-autorestart=true
-startretries=3
-user=root
-
-stdout_logfile=/dev/fd/1
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/fd/2
-stderr_logfile_maxbytes=0
-
-stopsignal=TERM
-EOF
-
 # Caddy
 
 COPY --from=caddy /usr/bin/caddy /usr/bin/caddy
@@ -183,9 +152,9 @@ stderr_logfile_maxbytes=0
 
 stopsignal=TERM
 
-[program:citm-utils-dnsmasq-updater]
+[program:citm-utils-dns-forwarder]
 directory=/citm-utils
-command=uv run python dnsmasq-updater.py
+command=uv run python dns_forwarder.py
 autostart=true
 autorestart=true
 startretries=3
