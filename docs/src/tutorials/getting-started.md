@@ -9,8 +9,19 @@ same Docker network, with no sidecar.
 The following tools are required:
 
 - **Docker** and **Docker Compose**
+
 - A Root CA certificate and key (`rootCA.pem`, `rootCA-key.pem`)
+
 - **cURL**
+
+- Stop other tutorial stacks before running this one. Multiple examples bind
+  host ports `80/443`.
+
+- An external Docker network named `my-citm-network`. Initialize it via:
+
+  ```bash
+  docker network create my-citm-network
+  ```
 
 Certificate generation is documented in
 **[Development Root CA Generation](../how-to/create-dev-root-ca.md)**.
@@ -30,32 +41,40 @@ flowchart LR
 
 ### Gateway Service
 
-File: `compose.yml`
+File: `examples/getting-started/compose.yml`
 
 ```yaml
+name: citm-examples-getting-started
+
 services:
   citm:
     image: fardjad/citm:latest
+    volumes:
+      # Required for service discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # A directory containing rootCA.pem and rootCA-key.pem
+      - ./certs:/certs:ro
+      # A directory containing Caddy config files
+      - ./caddy-conf.d:/etc/caddy/conf.d:ro
     environment:
+      # Discover services in this network
       - CITM_NETWORK=my-citm-network
     ports:
-      - "443:443"
-      - "443:443/udp"
-      - "80:80"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/certs:ro
-      - ./caddy-conf.d:/etc/caddy/conf.d:ro
+      # Caddy ports
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+      - "0.0.0.0:443:443/udp"
     networks:
       - my-citm-network
 
 networks:
   my-citm-network:
     name: my-citm-network
+    external: true
 ```
 
 Gateway routing rules for public hostnames are defined in
-`caddy-conf.d/whoami.conf`:
+`examples/getting-started/caddy-conf.d/whoami.conf`:
 
 ```caddy
 whoami.localhost {
@@ -72,17 +91,18 @@ whoami.localhost {
 
 ### Backend Service
 
-The application service is defined in the same `compose.yml` file:
+The application service is defined in the same
+`examples/getting-started/compose.yml` file:
 
 ```yaml
   whoami:
     image: traefik/whoami
-    labels:
-      # Register this container in CITM DNS (no sidecar required)
-      - citm_network=my-citm-network
-      - citm_dns_names=whoami.internal
     networks:
       - my-citm-network
+    labels:
+      # Register this service in the CITM network
+      - citm_network=my-citm-network
+      - citm_dns_names=whoami.internal
 ```
 
 ### Inspecting the Environment
@@ -90,7 +110,12 @@ The application service is defined in the same `compose.yml` file:
 Stack startup command:
 
 ```bash
-docker compose up -d
+cd examples/getting-started
+docker compose up -d \
+  --wait \
+  --pull always \
+  --build \
+  --force-recreate
 ```
 
 #### 1. External Access

@@ -99,7 +99,31 @@ check: check-justfiles check-dockerfiles check-composefiles check-caddyfiles che
 
 format: format-justfiles format-dockerfiles format-composefiles format-caddyfiles format-python format-shellscripts format-markdown
 
-test: check
+test:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    example_dirs=$(find examples -mindepth 1 -maxdepth 1 -type d ! -name '.just' | sort)
+
+    if [[ -z "$example_dirs" ]]; then
+        echo "No example directories found under examples/" >&2
+        exit 1
+    fi
+
+    while IFS= read -r example_dir; do
+        if [[ ! -f "${example_dir}/justfile" ]]; then
+            echo "Missing justfile in ${example_dir}" >&2
+            exit 1
+        fi
+
+        echo "Running example workflow in ${example_dir}"
+        (
+            cd "${example_dir}"
+            just up
+            just smoke
+            just down
+        )
+    done <<< "$example_dirs"
 
 install-git-hooks: (_check-tools "uv")
     #!/usr/bin/env bash

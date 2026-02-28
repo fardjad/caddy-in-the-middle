@@ -1,8 +1,8 @@
-# Mixed-Mode Deployment
+# Gateway and Sidecars
 
-This tutorial documents a mixed-mode CITM environment that combines a gateway
-deployment with sidecar deployments. The walkthrough covers topology, Caddy
-configuration, and inspection paths for both gateway and sidecar traffic.
+This tutorial documents a CITM topology with a gateway and sidecars. The
+walkthrough covers topology, Caddy configuration, and inspection paths for both
+gateway and sidecar traffic.
 
 ### Prerequisites
 
@@ -13,6 +13,9 @@ tutorial:
 
 - **cURL** and **jq** (to execute requests and parse API responses in the
   examples)
+
+- Stop other tutorial stacks before running this one. Multiple examples bind
+  host ports `80/443`.
 
 - An external Docker network named `my-citm-network`. This network must be
   initialized via:
@@ -35,7 +38,7 @@ tutorial:
 
 ```mermaid
 flowchart LR
-    User([User]) -- "GET https://service1.gateway.localhost" --> Gateway[CITM Gateway]
+    User([User]) -- "GET https://service1.localhost" --> Gateway[CITM Gateway]
     Gateway -- "GET https://service1.internal" --> Service1[Service 1]
     Service2[Service 2] -- "GET https://alt-service1.internal" --> Service1[Service 1]
 ```
@@ -46,27 +49,29 @@ The gateway operates as the central ingress point. It binds to the host's
 primary HTTP/HTTPS ports and requires access to the Docker socket to monitor
 container lifecycles for dynamic DNS registration.
 
-`gateway/compose.yml`:
+`examples/gateway-and-sidecars/gateway/compose.yml`:
 
 ```yaml
+name: citm-examples-gateway-and-sidecars-gateway
+
 services:
   citm:
     image: fardjad/citm:latest
     networks:
       - my-citm-network
     environment:
-      # discover the services in this network
+      # Discover services in this network
       - CITM_NETWORK=my-citm-network
     ports:
       # Caddy ports
-      - "443:443"
-      - "443:443/udp"
-      - "80:80"
+      - "0.0.0.0:443:443"
+      - "0.0.0.0:443:443/udp"
+      - "0.0.0.0:80:80"
     volumes:
       # Required for service discovery
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # A directory containing rootCA.pem and rootCA-key.pem
-      - ./path/to/certs:/certs:ro
+      - ../certs:/certs:ro
       # A directory containing Caddy config files
       - ./caddy-conf.d:/etc/caddy/conf.d:ro
 
@@ -81,7 +86,7 @@ backend services. The following configuration instructs the gateway to intercept
 traffic for `service1.localhost` and forward it to the internal
 `service1.internal` DNS name.
 
-`gateway/caddy-conf.d/service1.conf`:
+`examples/gateway-and-sidecars/gateway/caddy-conf.d/service1.conf`:
 
 ```caddy
 service1.localhost, alt-service1.localhost {
@@ -94,7 +99,7 @@ service1.localhost, alt-service1.localhost {
 
 		# Flow marker for MITMProxy to be able to distinguish flows easier
 		header_up X-MITM-Emoji ":one:"
-    # Route the request to the service via its internal DNS name
+		# Route the request to the service via its internal DNS name
 		header_up X-MITM-To "service1.internal:443"
 
 		header_up Host "service1.internal"
@@ -116,7 +121,7 @@ three primary internal services on its administrative port (`3858`):
 Because these services are internal to the container network, we must add
 specific routing rules to make them accessible from the host machine:
 
-`gateway/caddy-conf.d/citm.conf`:
+`examples/gateway-and-sidecars/gateway/caddy-conf.d/citm.conf`:
 
 ```caddy
 # Gateway Configuration
@@ -166,29 +171,35 @@ An internal service can be exposed to the CITM network by attaching a
 internal DNS resolution, TLS termination, and traffic proxying on behalf of the
 application container.
 
-`service1/compose.yml`:
+Any container that sets CITM discovery labels can register multiple internal DNS
+names by setting a comma-separated list in `citm_dns_names`. In this example,
+`service1` is registered as `service1.internal` and `alt-service1.internal`.
+
+`examples/gateway-and-sidecars/service1/compose.yml`:
 
 ```yaml
+name: citm-examples-gateway-and-sidecars-service1
+
 services:
-  citm-sidecar:
+  citm-sidecar-service1:
     image: fardjad/citm:latest
     networks:
       - my-citm-network
     labels:
-      # register this service in the CITM network
+      # Register this service in the CITM network
       - citm_network=my-citm-network
       - citm_dns_names=service1.internal,alt-service1.internal
     environment:
       - CITM_NETWORK=my-citm-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./path/to/certs:/certs:ro
+      - ../certs:/certs:ro
       - ./caddy-conf.d:/etc/caddy/conf.d:ro
 
   service1:
     image: traefik/whoami
     command: --port 8080
-    network_mode: "service:citm-sidecar"
+    network_mode: "service:citm-sidecar-service1"
 
 networks:
   my-citm-network:
@@ -200,7 +211,7 @@ Because `service1` communicates securely over HTTPS using the internal PKI, its
 sidecar requires a Caddy configuration to terminate incoming TLS traffic and
 forward the plaintext request to the local application port (8080).
 
-`service1/caddy-conf.d/service1.conf`:
+`examples/gateway-and-sidecars/service1/caddy-conf.d/service1.conf`:
 
 ```caddy
 service1.internal, alt-service1.internal {
@@ -218,15 +229,17 @@ service1.internal, alt-service1.internal {
 ```
 
 The second service operates as an internal client. It executes requests against
-`service1.internal`. Because it acts as a client, it requires the custom Root CA
-to be mounted and trusted by the execution environment (in this case, via the
-`SSL_CERT_FILE` environment variable for Python).
+`alt-service1.internal`. Because it acts as a client, it requires the custom
+Root CA to be mounted and trusted by the execution environment (in this case,
+via the `SSL_CERT_FILE` environment variable for Python).
 
-`service2/compose.yml`:
+`examples/gateway-and-sidecars/service2/compose.yml`:
 
 ```yaml
+name: citm-examples-gateway-and-sidecars-service2
+
 services:
-  citm-sidecar:
+  citm-sidecar-service2:
     image: fardjad/citm:latest
     networks:
       - my-citm-network
@@ -234,16 +247,16 @@ services:
       - CITM_NETWORK=my-citm-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./path/to/certs:/certs:ro
+      - ../certs:/certs:ro
 
   service2:
     image: python:3-alpine
-    network_mode: "service:citm-sidecar"
+    network_mode: "service:citm-sidecar-service2"
     environment:
       # Tell Python to trust the custom Root CA mounted below
       - SSL_CERT_FILE=/certs/rootCA.pem
     volumes:
-      - ./path/to/certs:/certs:ro
+      - ../certs:/certs:ro
     command: |
       python -u -c '
       import urllib.request
@@ -251,24 +264,42 @@ services:
       
       while True:
           try:
-              print("Sending request to https://service1.internal...")
-              req = urllib.request.urlopen("https://service1.internal")
+              print("Sending request to https://alt-service1.internal...")
+              req = urllib.request.urlopen("https://alt-service1.internal")
               print(f"Success! Status: {req.getcode()}")
           except Exception as e:
               print(f"Request failed: {e}")
           time.sleep(5)
       '
 
- networks:
-   my-citm-network:
-     name: my-citm-network
-     external: true
+networks:
+  my-citm-network:
+    name: my-citm-network
+    external: true
 ```
 
 ### Inspecting the Environment
 
 Following initialization, the environment state and captured traffic can be
 inspected via the administrative endpoints exposed through the gateway.
+
+Stack startup commands:
+
+```bash
+cd examples/gateway-and-sidecars
+(
+  cd gateway
+  docker compose up -d --wait --pull always --build --force-recreate
+)
+(
+  cd service1
+  docker compose up -d --wait --pull always --build --force-recreate
+)
+(
+  cd service2
+  docker compose up -d --wait --pull always --build --force-recreate
+)
+```
 
 These services are mapped to specific domains via routing rules defined in
 `gateway/caddy-conf.d/citm.conf`:

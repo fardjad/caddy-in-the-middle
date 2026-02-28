@@ -1,17 +1,19 @@
-name: getting-started-gateway
+name: citm-examples-getting-started
 
 services:
   citm:
-    image: fardjad/citm:latest
+    build:
+      context: ../..
+      dockerfile: Dockerfile
     volumes:
       # Required for service discovery
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # A directory containing rootCA.pem and rootCA-key.pem
-      - ../certs:/certs:ro
+      - ./certs:/certs:ro
       # A directory containing Caddy config files
       - ./caddy-conf.d:/etc/caddy/conf.d:ro
     environment:
-      # discover the services in this network
+      # Discover services in this network
       - CITM_NETWORK=my-citm-network
     ports:
       # Caddy ports
@@ -20,6 +22,15 @@ services:
       - '0.0.0.0:443:443/udp'
     networks:
       - my-citm-network
+
+  whoami:
+    image: traefik/whoami
+    networks:
+      - my-citm-network
+    labels:
+      # Register this service in the CITM network
+      - citm_network=my-citm-network
+      - citm_dns_names=whoami.internal
 
 networks:
   my-citm-network:

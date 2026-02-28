@@ -1,0 +1,125 @@
+# examples/.just/justfile
+
+_generate-certs certs_dir:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    mkdir -p "{{ certs_dir }}"
+
+    cert="{{ certs_dir }}/rootCA.pem"
+    key="{{ certs_dir }}/rootCA-key.pem"
+
+    if [[ -f "$cert" && -f "$key" ]]; then
+        echo "$cert and $key already exist"
+        exit 0
+    fi
+
+    for tool in cfssl cfssljson; do
+        if ! command -v "$tool" >/dev/null 2>&1; then
+            echo "Missing required tool: $tool" >&2
+            echo "Install prerequisites from docs/src/how-to/create-dev-root-ca.md" >&2
+            exit 1
+        fi
+    done
+
+    csr_json="{{ certs_dir }}/ca-csr.json"
+    ca_config_json="{{ certs_dir }}/ca-config.json"
+
+    printf '%s\n' \
+      '{' \
+      '  "CN": "CITM Root CA",' \
+      '  "key": { "algo": "rsa", "size": 4096 },' \
+      '  "names": [],' \
+      '  "ca": { "expiry": "876000h" }' \
+      '}' \
+      > "$csr_json"
+
+    printf '%s\n' \
+      '{' \
+      '  "signing": {' \
+      '    "default": { "expiry": "876000h" },' \
+      '    "profiles": {' \
+      '      "server": {' \
+      '        "usages": ["signing","key encipherment","server auth"],' \
+      '        "expiry": "9600h"' \
+      '      },' \
+      '      "client": {' \
+      '        "usages": ["signing","key encipherment","client auth"],' \
+      '        "expiry": "9600h"' \
+      '      }' \
+      '    }' \
+      '  }' \
+      '}' \
+      > "$ca_config_json"
+
+    (
+        cd "{{ certs_dir }}"
+        cfssl genkey -initca ca-csr.json | cfssljson -bare rootCA
+    )
+
+    chmod 600 "$key"
+    echo "Generated $cert and $key using cfssl initca workflow"
+
+_ensure-certs certs_dir: (_generate-certs certs_dir)
+
+_ensure-network:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if docker network inspect my-citm-network > /dev/null 2>&1; then
+        echo "Docker network my-citm-network already exists"
+    else
+        docker network create my-citm-network
+    fi
+
+_clear-project-containers:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    mapfile -t container_ids < <(docker ps -aq --filter "label=com.docker.compose.project")
+    if (( ${#container_ids[@]} == 0 )); then
+        exit 0
+    fi
+
+    matched_ids=()
+    for container_id in "${container_ids[@]}"; do
+        project_name=$(docker inspect -f '{{{{ index .Config.Labels "com.docker.compose.project" }}}}' "${container_id}" 2>/dev/null || true)
+        if [[ "${project_name}" == "citm-examples-"* ]]; then
+            matched_ids+=("${container_id}")
+        fi
+    done
+
+    if (( ${#matched_ids[@]} > 0 )); then
+        docker rm -f "${matched_ids[@]}"
+    fi
+
+    docker network rm -f my-citm-network >/dev/null 2>&1 || true
+
+_check-status url expected:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    deadline=$(( $(date +%s) + 300 ))
+    attempt=0
+    last_code="000"
+
+    while true; do
+        attempt=$((attempt + 1))
+
+        if code=$(curl -k -sS -o /dev/null -w "%{http_code}" "{{ url }}" 2>/dev/null); then
+            last_code="$code"
+        else
+            last_code="000"
+        fi
+
+        if [[ "$last_code" == "{{ expected }}" ]]; then
+            exit 0
+        fi
+
+        if (( $(date +%s) >= deadline )); then
+            echo "Smoke check failed for {{ url }} after ${attempt} attempts: expected {{ expected }}, got ${last_code}" >&2
+            exit 1
+        fi
+
+        sleep 2
+    done

@@ -15,30 +15,61 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
-      - name: Set up Docker
-        uses: docker/setup-docker-action@master
+
+      - name: Set up Go
+        uses: actions/setup-go@main
         with:
-          daemon-config: |
-            {
-              "features": {
-                "containerd-snapshotter": true
-              }
-            }
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@master
-      - name: Login to Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/login-action@master
+          go-version: stable
+          check-latest: true
+
+      - name: Set up Python
+        uses: actions/setup-python@main
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Pre-build dev container image
-        uses: devcontainers/ci@v0.3
+          python-version: '3.x'
+          check-latest: true
+
+      - name: Set up Node
+        uses: actions/setup-node@main
         with:
-          imageName: fardjad/citm-devcontainer
-          cacheFrom: fardjad/citm-devcontainer
-          push: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'always' || 'never' }}
-          runCmd: |
-            export CITM_HTTP_PORT=0
-            export CITM_HTTPS_PORT=0
-            just test
+          node-version: 'lts/*'
+          check-latest: true
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+
+          # Install Go-based tooling from latest upstream module versions.
+          go install github.com/cloudflare/cfssl/cmd/...@latest
+          go install github.com/reteps/dockerfmt@latest
+          go install mvdan.cc/sh/v3/cmd/shfmt@latest
+          go install github.com/caddyserver/caddy/v2/cmd/caddy@latest
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+          # Install Node tooling.
+          npm install -g rust-just dclint
+
+          # Install Python tooling.
+          python -m pip install --upgrade pip uv black
+
+          just --version
+          go version
+          node --version
+          npm --version
+          python --version
+          cfssl version
+          command -v cfssljson
+          dockerfmt version
+          shfmt --version
+          caddy version
+          black --version
+          uv --version
+          dclint --version
+          docker --version
+          docker compose version
+
+      - name: Run checks
+        run: just check
+
+      - name: Run test workflow
+        run: just test

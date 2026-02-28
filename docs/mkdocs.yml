@@ -27,6 +27,6 @@ nav:
   - Home: index.md
   - Tutorials:
     - Getting Started: tutorials/getting-started.md
-    - Mixed-Mode Deployment: tutorials/mixed-mode-deployment.md
+    - Gateway and Sidecars: tutorials/gateway-and-sidecars.md
   - How-To Guides:
     - Development Root CA Generation: how-to/create-dev-root-ca.md

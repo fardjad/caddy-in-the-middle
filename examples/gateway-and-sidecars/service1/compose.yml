@@ -1,8 +1,10 @@
-name: getting-started-service1
+name: citm-examples-gateway-and-sidecars-service1
 
 services:
-  citm-sidecar:
-    image: fardjad/citm:latest
+  citm-sidecar-service1:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../certs:/certs:ro
@@ -12,13 +14,13 @@ services:
     networks:
       - my-citm-network
     labels:
-      # register this service in the CITM network
+      # Register this service in the CITM network
       - citm_network=my-citm-network
       - citm_dns_names=service1.internal,alt-service1.internal
 
   service1:
     image: traefik/whoami
-    network_mode: "service:citm-sidecar"
+    network_mode: "service:citm-sidecar-service1"
     command: --port 8080
 
 networks:

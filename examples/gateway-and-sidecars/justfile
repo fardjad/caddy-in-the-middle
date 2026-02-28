@@ -1,0 +1,35 @@
+# examples/gateway-and-sidecars/justfile
+
+import '../.just/justfile'
+
+# show available recipes
+help:
+    @just --list
+
+up: _clear-project-containers _ensure-network (_ensure-certs "certs")
+    (cd gateway && docker compose up -d --wait --pull always --build --force-recreate)
+    (cd service1 && docker compose up -d --wait --pull always --build --force-recreate)
+    (cd service2 && docker compose up -d --wait --pull always --build --force-recreate)
+
+down:
+    (cd service2 && docker compose down)
+    (cd service1 && docker compose down)
+    (cd gateway && docker compose down)
+
+restart: down up
+
+ps:
+    (cd gateway && docker compose ps)
+    (cd service1 && docker compose ps)
+    (cd service2 && docker compose ps)
+
+logs-gateway:
+    (cd gateway && docker compose logs -f citm)
+
+logs-service1:
+    (cd service1 && docker compose logs -f citm-sidecar-service1 service1)
+
+logs-service2:
+    (cd service2 && docker compose logs -f citm-sidecar-service2 service2)
+
+smoke: (_check-status "https://utils.citm.localhost" "200") (_check-status "https://utils.citm.service1.localhost" "200") (_check-status "https://service1.localhost" "200")

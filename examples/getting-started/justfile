@@ -1,31 +1,23 @@
-# example-playground/justfile
+# examples/getting-started/justfile
 
-# Start all playground services (gateway, service1, service2)
-up:
-    docker compose -f gateway/compose.yml up -d
-    docker compose -f service1/compose.yml up -d
-    docker compose -f service2/compose.yml up -d
-    @echo "✅ All playground services are running."
-    @echo "   You can view the proxy UI at: https://mitm.citm.localhost:3858"
+import '../.just/justfile'
 
-# Stop all playground services
+# show available recipes
+help:
+    @just --list
+
+up: _clear-project-containers _ensure-network (_ensure-certs "certs")
+    docker compose up -d --wait --pull always --build --force-recreate
+
 down:
-    docker compose -f service2/compose.yml down
-    docker compose -f service1/compose.yml down
-    docker compose -f gateway/compose.yml down
-    @echo "🛑 All playground services stopped."
+    docker compose down
 
-# Restart all playground services
 restart: down up
 
-# View logs for the gateway
-logs-gateway:
-    docker compose -f gateway/compose.yml logs -f
+ps:
+    docker compose ps
 
-# View logs for service1 (traefik/whoami)
-logs-service1:
-    docker compose -f service1/compose.yml logs -f
+logs:
+    docker compose logs -f
 
-# View logs for service2 (the python script pinging service1)
-logs-service2:
-    docker compose -f service2/compose.yml logs -f
+smoke: (_check-status "https://utils.citm.localhost" "200") (_check-status "https://whoami.localhost" "200")

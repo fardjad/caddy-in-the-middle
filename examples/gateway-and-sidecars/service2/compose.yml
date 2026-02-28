@@ -1,8 +1,10 @@
-name: getting-started-service2
+name: citm-examples-gateway-and-sidecars-service2
 
 services:
-  citm-sidecar:
-    image: fardjad/citm:latest
+  citm-sidecar-service2:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../certs:/certs:ro
@@ -18,7 +20,7 @@ services:
     environment:
       # Tell Python to trust the custom Root CA mounted below
       - SSL_CERT_FILE=/certs/rootCA.pem
-    network_mode: "service:citm-sidecar"
+    network_mode: "service:citm-sidecar-service2"
     command: |
       python -u -c '
       import urllib.request
