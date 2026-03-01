@@ -1,6 +1,8 @@
 site_name: Caddy in the Middle
 docs_dir: src
 site_url: https://fardjad.com/caddy-in-the-middle/
+repo_url: https://github.com/fardjad/caddy-in-the-middle
+repo_name: fardjad/caddy-in-the-middle
 
 theme:
   name: material
@@ -31,4 +33,19 @@ nav:
     - HTTP Proxy and DNS Forwarder: tutorials/http-proxy-and-dns-forwarder.md
     - Mocking: tutorials/mocking.md
   - How-To Guides:
+    - Inspect Traffic and Export HAR: how-to/inspect-traffic-and-export-har.md
+    - Configure Service Discovery: how-to/configure-service-discovery.md
+    - Author Mock Templates: how-to/author-mock-templates.md
     - Development Root CA Generation: how-to/create-dev-root-ca.md
+  - Reference:
+    - Runtime Configuration: reference/runtime-configuration.md
+    - Network and Port Contracts: reference/network-and-port-contracts.md
+    - Admin API: reference/admin-api.md
+    - Caddy and MITM Routing Contract: reference/caddy-and-mitm-routing-contract.md
+    - Mock Template Format: reference/mock-template-format.md
+  - Explanation:
+    - Architecture: explanation/architecture.md
+    - Request Flow: explanation/request-flow.md
+    - DNS Discovery and Forwarding: explanation/dns-discovery-and-forwarding.md
+    - Mocking and Rewrite Pipeline: explanation/mocking-and-rewrite-pipeline.md
+    - Gateway vs Sidecar Topologies: explanation/gateway-vs-sidecar-topologies.md

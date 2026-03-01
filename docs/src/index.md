@@ -1,52 +1,44 @@
 # Caddy in the Middle
 
-Caddy in the Middle (CITM) is a containerized toolkit designed to facilitate the
-configuration, inspection, and debugging of HTTP(S) communication in distributed
-systems.
+Caddy in the Middle (CITM) is a containerized toolkit for configuring,
+inspecting, and debugging HTTP(S) communication in distributed systems.
 
-Debugging microservices architectures frequently requires the local management
-of TLS certificates, reverse proxy configuration, traffic inspection, and
-endpoint mocking. CITM addresses these requirements by integrating these
-networking capabilities into a single Docker container.
+CITM combines TLS termination, proxying, DNS service discovery, traffic
+inspection, and endpoint mocking in one container image.
 
 ______________________________________________________________________
 
 ## Core Capabilities
 
-- **Automated Local HTTPS**: CITM utilizes a user-provided Root CA to
-  dynamically sign leaf certificates for requested domains. This removes the
-  need for manual certificate generation during local development.
-- **Traffic Inspection and Routing**: Utilizes an embedded `mitmproxy` instance
-  to capture HTTP(S) traffic and execute dynamic routing rules between internal
-  services.
-- **Programmable Endpoint Mocking**: Supports intercepting HTTP requests to
-  serve file-based responses. Mocks are defined using the Mako templating
-  engine. This allows for dynamic response generation via Python.
-- **Container-Native Service Discovery**: Acts as an internal DNS server for its
-  network stack. It monitors Docker container labels to map specified DNS names
-  to container ip addresses. This isolates network configurations from the host
-  machine.
-- **Test Suite Integration**: Provides `Testcontainers` modules. These allow
-  automated integration tests to programmatically provision and configure proxy
-  instances.
+- **Automated Local HTTPS**: Uses a provided Root CA to issue certificates for
+  local domains through Caddy internal PKI.
+- **Traffic Inspection and Routing**: Uses embedded `mitmproxy` for inspection,
+  host rewrite routing, and protocol-aware flow handling.
+- **Programmable Endpoint Mocking**: Supports file-based Mako mock templates
+  loaded through `MOCK_PATHS`.
+- **Container-Native Service Discovery**: Builds DNS records from Docker labels
+  (`citm_network`, `citm_dns_names`).
+- **Test Suite Integration**: Provides Testcontainers integrations for Python
+  and .NET.
 
 ______________________________________________________________________
 
 ## Documentation Structure
 
-- **[Tutorials](./tutorials/getting-started.md)**: Step-by-step instructions for
-  initial setup and basic usage.
-- **[How-To Guides](./how-to/run-via-docker.md)**: Formatted procedures for
-  specific tasks, such as configuring service discovery or authoring mock
-  endpoints.
-- **[Reference](./reference/configuration.md)**: Technical specifications
-  covering environment variables, supported Docker labels, and module APIs.
-- **[Explanation](./explanation/architecture.md)**: Documentation regarding the
-  system architecture and internal request lifecycle.
+- **[Tutorials](./tutorials/getting-started.md)**: Step-by-step learning paths.
+- **[How-To Guides](./how-to/inspect-traffic-and-export-har.md)**: Task-oriented
+  procedures for operations and configuration.
+- **[Reference](./reference/runtime-configuration.md)**: Runtime contracts.
+- **[Explanation](./explanation/architecture.md)**: Architecture, flows, and
+  design tradeoffs.
 
 ______________________________________________________________________
 
 ## Next Steps
 
-The **[Getting Started](./tutorials/getting-started.md)** tutorial provides
-step-by-step instructions for a minimal setup.
+1. Follow the **[Getting Started](./tutorials/getting-started.md)** tutorial.
+1. Use
+   **[Inspect Traffic and Export HAR](./how-to/inspect-traffic-and-export-har.md)**
+   for repeatable operational checks.
+1. Use **[Runtime Configuration](./reference/runtime-configuration.md)** to
+   confirm deployment contracts.
