@@ -1,0 +1,21 @@
+# examples/http-proxy-and-dns-forwarder/justfile
+
+import '../.just/justfile'
+
+# show available recipes
+help:
+    @just --list
+
+up: _clear-project-containers _ensure-network (_ensure-certs "certs")
+    docker compose up -d --wait --pull always --build --force-recreate
+
+down:
+    docker compose down
+
+restart: down up
+
+ps:
+    docker compose ps
+
+logs:
+    docker compose logs -f

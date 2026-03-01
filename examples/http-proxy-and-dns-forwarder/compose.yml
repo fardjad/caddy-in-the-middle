@@ -1,0 +1,38 @@
+name: citm-examples-http-proxy-and-dns-forwarder
+
+services:
+  citm:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    volumes:
+      # Required for service discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # A directory containing rootCA.pem and rootCA-key.pem
+      - ./certs:/certs:ro
+    environment:
+      # Discover services in this network
+      - CITM_NETWORK=my-citm-network
+    ports:
+      # HTTP proxy port
+      - '0.0.0.0:8380:8380'
+    networks:
+      - my-citm-network
+    labels:
+      # Register this service in the CITM network
+      - citm_network=my-citm-network
+      - citm_dns_names=gateway.internal
+
+  whoami:
+    image: traefik/whoami
+    networks:
+      - my-citm-network
+    labels:
+      # Register this service in the CITM network
+      - citm_network=my-citm-network
+      - citm_dns_names=whoami.internal
+
+networks:
+  my-citm-network:
+    name: my-citm-network
+    external: true
