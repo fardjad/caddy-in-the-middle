@@ -29,5 +29,6 @@ nav:
     - Getting Started: tutorials/getting-started.md
     - Gateway and Sidecars: tutorials/gateway-and-sidecars.md
     - HTTP Proxy and DNS Forwarder: tutorials/http-proxy-and-dns-forwarder.md
+    - Mocking: tutorials/mocking.md
   - How-To Guides:
     - Development Root CA Generation: how-to/create-dev-root-ca.md

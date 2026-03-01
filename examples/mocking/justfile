@@ -1,0 +1,58 @@
+# examples/mocking/justfile
+
+import '../.just/justfile'
+
+# show available recipes
+help:
+    @just --list
+
+up: _clear-project-containers _ensure-network (_ensure-certs "certs")
+    docker compose up -d --wait --pull always --build --force-recreate
+
+down:
+    docker compose down
+
+restart: down up
+
+ps:
+    docker compose ps
+
+logs:
+    docker compose logs -f
+
+_ensure-python:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo "Smoke check requires python3 in PATH" >&2
+        exit 1
+    fi
+
+smoke: _ensure-python
+    #!/usr/bin/env python3
+    import ssl
+    import sys
+    import urllib.request
+
+    context = ssl._create_unverified_context()
+    request = urllib.request.Request("https://books.localhost/books")
+
+    try:
+        with urllib.request.urlopen(request, context=context) as response:
+            status = response.getcode()
+            source = response.headers.get("X-Source", "")
+    except Exception as exc:
+        print(f"Smoke check failed: request error: {exc}", file=sys.stderr)
+        raise SystemExit(1)
+
+    if status != 200:
+        print(f"Smoke check failed: expected status 200, got {status}", file=sys.stderr)
+        raise SystemExit(1)
+
+    if source.lower() != "mock":
+        print(
+            f"Smoke check failed: expected X-Source=mock, got {source!r}",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
