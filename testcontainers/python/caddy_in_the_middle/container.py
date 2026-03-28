@@ -15,10 +15,24 @@ class CitmContainer(DockerContainer):
     Testcontainers module for CaddyInTheMiddle.
     """
 
+    # BEGIN GENERATED DEFAULT PORTS
+    HTTP_PORT = 80
+    HTTPS_PORT = 443
+    HTTP_PROXY_PORT = 19080
+    SOCKS_PROXY_PORT = 19081
+    ADMIN_PORT = 19058
+    # END GENERATED DEFAULT PORTS
+
     def __init__(self, image: str = f"fardjad/citm:{__version__}", **kwargs):
         self._auto_configure_docker_host()
         super().__init__(image, **kwargs)
-        self.with_exposed_ports(80, 443, 8380, 8381, 3858)
+        self.with_exposed_ports(
+            self.HTTP_PORT,
+            self.HTTPS_PORT,
+            self.HTTP_PROXY_PORT,
+            self.SOCKS_PROXY_PORT,
+            self.ADMIN_PORT,
+        )
         self.with_volume_mapping("/var/run/docker.sock", "/var/run/docker.sock", "rw")
         self.waiting_for(HealthcheckWaitStrategy())
 
@@ -121,19 +135,19 @@ class CitmContainer(DockerContainer):
         return f"{'.'.join(subdomains)}.{base_hostname}"
 
     def get_caddy_http_base_url(self, *subdomains: str) -> str:
-        return f"http://{self._get_hostname_with_subdomains(*subdomains)}:{self.get_exposed_port(80)}"
+        return f"http://{self._get_hostname_with_subdomains(*subdomains)}:{self.get_exposed_port(self.HTTP_PORT)}"
 
     def get_caddy_https_base_url(self, *subdomains: str) -> str:
-        return f"https://{self._get_hostname_with_subdomains(*subdomains)}:{self.get_exposed_port(443)}"
+        return f"https://{self._get_hostname_with_subdomains(*subdomains)}:{self.get_exposed_port(self.HTTPS_PORT)}"
 
     def get_http_proxy_address(self) -> str:
-        return f"http://{self.get_container_host_ip()}:{self.get_exposed_port(8380)}"
+        return f"http://{self.get_container_host_ip()}:{self.get_exposed_port(self.HTTP_PROXY_PORT)}"
 
     def get_socks_proxy_address(self) -> str:
-        return f"socks5://{self.get_container_host_ip()}:{self.get_exposed_port(8381)}"
+        return f"socks5://{self.get_container_host_ip()}:{self.get_exposed_port(self.SOCKS_PROXY_PORT)}"
 
     def get_admin_base_url(self, *subdomains: str) -> str:
-        return f"https://{self._get_hostname_with_subdomains(*subdomains)}:{self.get_exposed_port(3858)}"
+        return f"https://{self._get_hostname_with_subdomains(*subdomains)}:{self.get_exposed_port(self.ADMIN_PORT)}"
 
     def create_client(
         self, ignore_ssl_errors: bool = True, **kwargs

@@ -247,6 +247,24 @@ class ResolvConfManager:
             self._is_activated = False
 
 
+def configure_local_resolver(
+    resolv_manager: ResolvConfManager,
+    *,
+    listen_port: int,
+) -> bool:
+    if listen_port == DEFAULT_LISTEN_PORT:
+        resolv_manager.activate_localhost()
+        return True
+
+    print(
+        "CITM DNS forwarder is not listening on port 53. "
+        "/etc/resolv.conf will not be rewritten, so system-resolver lookups may "
+        "bypass CITM DNS interception unless configured explicitly.",
+        flush=True,
+    )
+    return False
+
+
 class DnsForwarder:
     def __init__(
         self,
@@ -427,7 +445,7 @@ def main() -> None:
             flush=True,
         )
 
-    resolv_manager.activate_localhost()
+    configure_local_resolver(resolv_manager, listen_port=listen_port)
     atexit.register(resolv_manager.restore)
 
     forwarder = DnsForwarder(

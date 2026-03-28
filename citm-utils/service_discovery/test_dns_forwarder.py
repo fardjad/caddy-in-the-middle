@@ -171,6 +171,38 @@ def test_resolv_conf_manager_activate_and_restore(tmp_path):
     assert not backup_path.exists()
 
 
+def test_configure_local_resolver_activates_localhost_on_default_port(tmp_path):
+    resolv_path = tmp_path / "resolv.conf"
+    backup_path = tmp_path / "resolv.conf.bak"
+    resolv_path.write_text("nameserver 1.1.1.1\n", encoding="utf-8")
+    manager = ResolvConfManager(
+        resolv_path=str(resolv_path),
+        backup_path=str(backup_path),
+    )
+
+    activated = dns_forwarder.configure_local_resolver(manager, listen_port=53)
+
+    assert activated is True
+    assert resolv_path.read_text(encoding="utf-8") == "nameserver 127.0.0.1\n"
+
+
+def test_configure_local_resolver_skips_override_on_non_default_port(tmp_path, capsys):
+    resolv_path = tmp_path / "resolv.conf"
+    backup_path = tmp_path / "resolv.conf.bak"
+    original_content = "nameserver 1.1.1.1\n"
+    resolv_path.write_text(original_content, encoding="utf-8")
+    manager = ResolvConfManager(
+        resolv_path=str(resolv_path),
+        backup_path=str(backup_path),
+    )
+
+    activated = dns_forwarder.configure_local_resolver(manager, listen_port=5300)
+
+    assert activated is False
+    assert resolv_path.read_text(encoding="utf-8") == original_content
+    assert "not listening on port 53" in capsys.readouterr().out
+
+
 def test_resolve_returns_empty_bytes_for_invalid_request(monkeypatch):
     forwarder = _make_forwarder(monkeypatch)
     assert forwarder.resolve(b"invalid-packet", via_tcp=False) == b""

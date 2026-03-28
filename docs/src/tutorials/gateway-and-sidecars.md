@@ -112,7 +112,8 @@ service1.localhost, alt-service1.localhost {
 ```
 
 The gateway also configures administrative routing. Caddy in the Middle exposes
-three primary internal services on its administrative port (`3858`):
+three primary internal services on `CADDY_ADMIN_PORT`. Default values are
+documented in [Default Ports](../reference/default-ports.md).
 
 1. An info endpoint (`/`) returning a JSON payload of environment metadata.
 1. A HAR dump endpoint (`/har`) returning captured flows in HTTP Archive format.
@@ -131,8 +132,8 @@ specific routing rules to make them accessible from the host machine:
 
 	reverse_proxy {
 		# The `{labels.2}` placeholder extracts the third segment from the right (e.g., 'mitm' or 'utils').
-		# This dynamically proxies the request to the matching internal utility on port 3858.
-		to "{labels.2}.citm.localhost:3858"
+		# This dynamically proxies the request to the matching internal utility on CADDY_ADMIN_PORT.
+		to "{labels.2}.citm.localhost:{$CADDY_ADMIN_PORT}"
 
 		transport http {
 			tls
@@ -149,11 +150,11 @@ specific routing rules to make them accessible from the host machine:
 	reverse_proxy {
 		# The `{labels.1}` placeholder extracts the second segment from the right ('service1').
 		# This dynamically proxies the request to the target sidecar's internal DNS name over the Docker network.
-		to "{labels.1}.internal:3858"
+		to "{labels.1}.internal:{$CADDY_ADMIN_PORT}"
 
 		# The `{labels.3}` placeholder extracts the fourth segment from the right ('mitm' or 'utils').
 		# This ensures the `Host` header is preserved when the request reaches the target sidecar.
-		header_up Host "{labels.3}.citm.localhost:3858"
+		header_up Host "{labels.3}.citm.localhost:{$CADDY_ADMIN_PORT}"
 
 		transport http {
 			tls

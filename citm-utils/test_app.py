@@ -3,7 +3,7 @@ from __future__ import annotations
 import socket
 from typing import Any
 
-from app import create_app
+from app import DEFAULT_CADDY_ADMIN_PORT, create_app
 
 
 class FakeDockerClient:
@@ -48,11 +48,32 @@ def test_root_returns_request_data_and_dns_entries():
     assert payload["request_data"]["headers"]["X-Test"] == "ok"
 
 
+def test_create_app_delays_docker_client_creation_until_request():
+    calls = 0
+
+    def fake_docker_client_factory() -> FakeDockerClient:
+        nonlocal calls
+        calls += 1
+        return FakeDockerClient()
+
+    app = create_app(
+        docker_client_factory=fake_docker_client_factory,
+        dns_entries_loader=lambda _client: {},
+    )
+
+    assert calls == 0
+
+    response = app.test_client().get("/")
+
+    assert response.status_code == 200
+    assert calls == 1
+
+
 def test_health_returns_ok_when_all_checks_pass():
     def fake_get(url: str, timeout: int) -> FakeResponse:
         status_map = {
-            "https://citm.internal:3858": 404,
-            "https://mitm.citm.internal:3858": 200,
+            f"https://citm.internal:{DEFAULT_CADDY_ADMIN_PORT}": 404,
+            f"https://mitm.citm.internal:{DEFAULT_CADDY_ADMIN_PORT}": 200,
         }
         assert timeout == 2
         return FakeResponse(status_map[url])

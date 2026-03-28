@@ -1,9 +1,14 @@
+import os
 import socket
 from pathlib import Path
 
 from flask import Flask, jsonify, send_file
 
 from . import client
+
+# BEGIN GENERATED DEFAULT PORTS
+DEFAULT_SUPERVISOR_WEBUI_PORT = 19001
+# END GENERATED DEFAULT PORTS
 
 
 def create_app() -> Flask:
@@ -65,4 +70,9 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001)
+    app.run(
+        host="0.0.0.0",
+        port=int(
+            os.getenv("SUPERVISOR_WEBUI_PORT", str(DEFAULT_SUPERVISOR_WEBUI_PORT))
+        ),
+    )

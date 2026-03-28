@@ -19,15 +19,17 @@ The container starts `supervisord`, which launches these processes:
 The DNS forwarder updates container resolver behavior to localhost, so all
 processes in the container resolve through `citm-utils-dns-forwarder`. The DNS
 forwarder queries the Docker API to build container label-based DNS records.
+Default values for the runtime ports are documented in
+[Default Ports](../reference/default-ports.md).
 
 ```mermaid
 flowchart LR
-    Client[Client] --> Caddy[Caddy 80/443/3858]
-    Caddy --> Mitm[mitmproxy 8380/8381]
-    Caddy --> Utils[citm-utils-web 5000]
-    Caddy --> Supervisor[supervisor-webui 5001]
+    Client[Client] --> Caddy["Caddy CADDY_HTTP_PORT/CADDY_HTTPS_PORT/CADDY_ADMIN_PORT"]
+    Caddy --> Mitm["mitmproxy MITMPROXY_HTTP_PROXY_PORT/MITMPROXY_SOCKS_PROXY_PORT"]
+    Caddy --> Utils["citm-utils-web CITM_UTILS_WEB_PORT"]
+    Caddy --> Supervisor["supervisor-webui SUPERVISOR_WEBUI_PORT"]
     Mitm --> Apps[Target Services]
-    DNS[citm-utils-dns-forwarder 53]
+    DNS["citm-utils-dns-forwarder CITM_DNS_LISTEN_PORT"]
     Caddy --> DNS
     Mitm --> DNS
     Utils --> DNS

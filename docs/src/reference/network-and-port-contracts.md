@@ -9,18 +9,19 @@ processes behind `supervisord` in one container.
 
 ### Exposed container ports
 
-- `80/tcp`: HTTP ingress via Caddy
-- `443/tcp`: HTTPS ingress via Caddy
-- `8380/tcp`: HTTP proxy via mitmproxy
-- `8381/tcp`: SOCKS5 proxy via mitmproxy
-- `3858/tcp`: admin and utility virtual hosts through Caddy
+- `CADDY_HTTP_PORT/tcp`: HTTP ingress via Caddy
+- `CADDY_HTTPS_PORT/tcp`: HTTPS ingress via Caddy
+- `MITMPROXY_HTTP_PROXY_PORT/tcp`: HTTP proxy via mitmproxy
+- `MITMPROXY_SOCKS_PROXY_PORT/tcp`: SOCKS5 proxy via mitmproxy
+- `CADDY_ADMIN_PORT/tcp`: admin and utility virtual hosts through Caddy
 
 ### Internal service ports
 
-- `5000/tcp`: `citm-utils-web` (Flask + gunicorn)
-- `5001/tcp`: `supervisor-webui` (Flask + gunicorn)
-- `8382/tcp`: `mitmweb` UI backend
-- `53/udp` and `53/tcp`: DNS forwarder listener
+- `CITM_UTILS_WEB_PORT/tcp`: `citm-utils-web` (Flask + gunicorn)
+- `SUPERVISOR_WEBUI_PORT/tcp`: `supervisor-webui` (Flask + gunicorn)
+- `MITMPROXY_WEB_PORT/tcp`: `mitmweb` UI backend
+- `CITM_DNS_LISTEN_PORT/udp` and `CITM_DNS_LISTEN_PORT/tcp`: DNS forwarder
+  listener
 
 ### Network membership
 
@@ -30,9 +31,11 @@ processes behind `supervisord` in one container.
 
 ## Defaults
 
+- Default values are documented in [Default Ports](default-ports.md).
 - Test environment runners can map exposed ports to random host ports.
 - Example compose workflows map fixed host ports for local development.
-- DNS forwarder listens on `0.0.0.0:53` unless overridden.
+- DNS forwarder listens on `CITM_DNS_LISTEN_HOST:CITM_DNS_LISTEN_PORT` unless
+  overridden.
 
 ## Examples
 
@@ -41,19 +44,20 @@ ports:
   - "0.0.0.0:80:80"
   - "0.0.0.0:443:443"
   - "0.0.0.0:443:443/udp"
-  - "0.0.0.0:8380:8380"
+  - "0.0.0.0:8380:${MITMPROXY_HTTP_PROXY_PORT:-19080}"
 ```
 
 ```bash
 # Mapped host addresses in test environments:
-# http://<host>:<mapped_8380>
-# socks5://<host>:<mapped_8381>
-# https://<host>:<mapped_3858>
+# http://<host>:<mapped_${MITMPROXY_HTTP_PROXY_PORT}>
+# socks5://<host>:<mapped_${MITMPROXY_SOCKS_PROXY_PORT}>
+# https://<host>:<mapped_${CADDY_ADMIN_PORT}>
 ```
 
 ## Failure behavior
 
-- Host port conflicts on `80`, `443`, or `8380`: compose startup fails.
+- Host port conflicts on mapped ingress or proxy ports: compose startup fails.
 - Missing network attachment: discovered services are unreachable by internal
   DNS names.
-- DNS forwarder bind failure on `53`: `citm-utils-dns-forwarder` process fails.
+- DNS forwarder bind failure on `CITM_DNS_LISTEN_PORT`:
+  `citm-utils-dns-forwarder` process fails.

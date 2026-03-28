@@ -1,5 +1,7 @@
 {
 	default_bind 0.0.0.0
+	http_port {$CADDY_HTTP_PORT}
+	https_port {$CADDY_HTTPS_PORT}
 
 	log {
 		format console
@@ -28,13 +30,13 @@
 	}
 }
 
-https://citm.internal:3858, https://*.citm.internal:3858, https://citm.localhost:3858 https://*.citm.localhost:3858 {
+https://citm.internal:{$CADDY_ADMIN_PORT}, https://*.citm.internal:{$CADDY_ADMIN_PORT}, https://citm.localhost:{$CADDY_ADMIN_PORT}, https://*.citm.localhost:{$CADDY_ADMIN_PORT} {
 	import dev_certs
 
 	@mitm `{host}.startsWith("mitm.citm.")`
 	handle @mitm {
 		reverse_proxy {
-			to 127.0.0.1:8382
+			to 127.0.0.1:{$MITMPROXY_WEB_PORT}
 			header_up Authorization "Bearer secret"
 			header_up -Origin
 
@@ -47,7 +49,7 @@ https://citm.internal:3858, https://*.citm.internal:3858, https://citm.localhost
 	@utils `{host}.startsWith("utils.citm.")`
 	handle @utils {
 		reverse_proxy {
-			to 127.0.0.1:5000
+			to 127.0.0.1:{$CITM_UTILS_WEB_PORT}
 
 			transport http {
 				network_proxy none
@@ -58,7 +60,7 @@ https://citm.internal:3858, https://*.citm.internal:3858, https://citm.localhost
 	@supervisor `{host}.startsWith("supervisor.citm.")`
 	handle @supervisor {
 		reverse_proxy {
-			to 127.0.0.1:5001
+			to 127.0.0.1:{$SUPERVISOR_WEBUI_PORT}
 
 			transport http {
 				network_proxy none

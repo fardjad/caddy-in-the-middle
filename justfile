@@ -95,9 +95,18 @@ format-markdown *args: (_check-tools "uv")
 check-markdown:
     @just format-markdown --check
 
-check: check-justfiles check-dockerfiles check-composefiles check-caddyfiles check-python check-shellscripts check-markdown
+update-default-ports *args: (_check-tools "python3")
+    #!/usr/bin/env bash
 
-format: format-justfiles format-dockerfiles format-composefiles format-caddyfiles format-python format-shellscripts format-markdown
+    set -euo pipefail
+    python3 hack/update_default_ports.py {{ args }}
+
+check-generated-default-ports:
+    @just update-default-ports --check
+
+check: check-generated-default-ports check-justfiles check-dockerfiles check-composefiles check-caddyfiles check-python check-shellscripts check-markdown
+
+format: update-default-ports format-justfiles format-dockerfiles format-composefiles format-caddyfiles format-python format-shellscripts format-markdown
 
 test:
     #!/usr/bin/env bash

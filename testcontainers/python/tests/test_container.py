@@ -105,10 +105,13 @@ class TestCitmContainer:
         container.get_container_host_ip = MagicMock(return_value="127.0.0.1")
         assert (
             container.get_caddy_http_base_url("internal")
-            == "http://internal.localhost:80"
+            == f"http://internal.localhost:{CitmContainer.HTTP_PORT}"
         )
         assert (
             container.get_caddy_https_base_url("secure")
-            == "https://secure.localhost:443"
+            == f"https://secure.localhost:{CitmContainer.HTTPS_PORT}"
         )
-        assert container.get_admin_base_url("admin") == "https://admin.localhost:3858"
+        assert (
+            container.get_admin_base_url("admin")
+            == f"https://admin.localhost:{CitmContainer.ADMIN_PORT}"
+        )

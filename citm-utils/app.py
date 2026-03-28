@@ -2,6 +2,7 @@ import pip_system_certs.wrapt_requests
 
 pip_system_certs.wrapt_requests.inject_truststore()
 
+import os
 import socket
 from collections.abc import Callable
 
@@ -12,10 +13,18 @@ from flask import Flask, jsonify, request
 from mitmproxy.routes import mitmproxy_blueprint
 from service_discovery import get_citm_dns_entries
 
+# BEGIN GENERATED DEFAULT PORTS
+DEFAULT_CADDY_ADMIN_PORT = 19058
+DEFAULT_CITM_UTILS_WEB_PORT = 19000
+# END GENERATED DEFAULT PORTS
+
+DockerClientFactory = Callable[[], docker.DockerClient]
+
 
 def create_app(
     *,
     docker_client: docker.DockerClient | None = None,
+    docker_client_factory: DockerClientFactory = docker.from_env,
     dns_entries_loader: Callable[
         [docker.DockerClient], dict[str, dict[str, list[str]]]
     ] = get_citm_dns_entries,
@@ -23,11 +32,18 @@ def create_app(
     hostname_getter: Callable[[], str] = socket.gethostname,
     addrinfo_getter: Callable[..., list[tuple]] = socket.getaddrinfo,
 ) -> Flask:
-    docker_client = docker_client or docker.from_env()
+    resolved_docker_client = docker_client
+    caddy_admin_port = int(os.getenv("CADDY_ADMIN_PORT", str(DEFAULT_CADDY_ADMIN_PORT)))
 
     app = Flask(__name__)
     app.json.compact = False
     app.register_blueprint(mitmproxy_blueprint)
+
+    def get_docker_client() -> docker.DockerClient:
+        nonlocal resolved_docker_client
+        if resolved_docker_client is None:
+            resolved_docker_client = docker_client_factory()
+        return resolved_docker_client
 
     @app.route(
         "/", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
@@ -42,7 +58,7 @@ def create_app(
             "args": request.args.to_dict(flat=False),
             "cookies": request.cookies,
         }
-        dns_entries = dns_entries_loader(docker_client)
+        dns_entries = dns_entries_loader(get_docker_client())
         return (
             jsonify(
                 {
@@ -59,7 +75,7 @@ def create_app(
         results = []
 
         try:
-            docker_ping = docker_client.ping()
+            docker_ping = get_docker_client().ping()
             results.append(
                 {
                     "check": "docker_connection",
@@ -113,12 +129,12 @@ def create_app(
         service_checks = [
             {
                 "check": "caddy_serving",
-                "url": "https://citm.internal:3858",
+                "url": f"https://citm.internal:{caddy_admin_port}",
                 "expected_status": 404,
             },
             {
                 "check": "mitmproxy_serving",
-                "url": "https://mitm.citm.internal:3858",
+                "url": f"https://mitm.citm.internal:{caddy_admin_port}",
                 "expected_status": 200,
             },
         ]
@@ -158,4 +174,7 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.getenv("CITM_UTILS_WEB_PORT", str(DEFAULT_CITM_UTILS_WEB_PORT))),
+    )

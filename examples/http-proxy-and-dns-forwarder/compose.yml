@@ -15,7 +15,7 @@ services:
       - CITM_NETWORK=my-citm-network
     ports:
       # HTTP proxy port
-      - '0.0.0.0:8380:8380'
+      - '0.0.0.0:8380:${MITMPROXY_HTTP_PROXY_PORT:-19080}'
     networks:
       - my-citm-network
     labels:

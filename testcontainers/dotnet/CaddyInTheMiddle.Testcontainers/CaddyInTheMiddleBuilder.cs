@@ -15,6 +15,7 @@ public class CaddyInTheMiddleBuilder : ContainerBuilder<CaddyInTheMiddleBuilder,
     /// </summary>
     public static readonly string CaddyInTheMiddleImage = $"fardjad/citm:{typeof(CaddyInTheMiddleBuilder).Assembly.GetName().Version?.ToString(3) ?? "latest"}";
 
+    // BEGIN GENERATED DEFAULT PORTS
     /// <summary>
     /// The exposed HTTP port (80).
     /// </summary>
@@ -28,17 +29,18 @@ public class CaddyInTheMiddleBuilder : ContainerBuilder<CaddyInTheMiddleBuilder,
     /// <summary>
     /// The user-mapped port for the HTTP proxy.
     /// </summary>
-    public const ushort HttpProxyPort = 8380;
+    public const ushort HttpProxyPort = 19080;
 
     /// <summary>
     /// The user-mapped port for the SOCKS5 proxy.
     /// </summary>
-    public const ushort SocksProxyPort = 8381;
+    public const ushort SocksProxyPort = 19081;
 
     /// <summary>
     /// The user-mapped port for the Admin API.
     /// </summary>
-    public const ushort AdminPort = 3858;
+    public const ushort AdminPort = 19058;
+    // END GENERATED DEFAULT PORTS
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CaddyInTheMiddleBuilder" /> class.

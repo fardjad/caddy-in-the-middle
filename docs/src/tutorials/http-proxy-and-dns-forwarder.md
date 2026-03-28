@@ -25,7 +25,9 @@ Certificate generation is documented in
 ### Architecture
 
 - **CITM gateway**: Exposes `8380` to the host and registers `gateway.internal`
-  through `citm_dns_names`.
+  through `citm_dns_names`. The container-side proxy port is
+  `MITMPROXY_HTTP_PROXY_PORT`. Default values are documented in
+  [Default Ports](../reference/default-ports.md).
 - **whoami**: Registers `whoami.internal` through `citm_dns_names`.
 - **Host client**: Sends requests through CITM by setting `http_proxy` and
   `https_proxy`.
@@ -36,12 +38,12 @@ flowchart LR
     Whoami["whoami container (:80)"]
 
     subgraph CitmBox["CITM container"]
-      Proxy["mitmproxy (:8380)"]
-      Utils["citm-utils (:3858)"]
+      Proxy["mitmproxy (:MITMPROXY_HTTP_PROXY_PORT)"]
+      Utils["citm-utils (:CADDY_ADMIN_PORT)"]
     end
 
     Host -- "Proxy through" --> Proxy
-    Proxy -- "https://utils.citm.internal:3858" --> Utils
+    Proxy -- "https://utils.citm.internal:${CADDY_ADMIN_PORT}" --> Utils
     Proxy -- "http://whoami.internal" --> Whoami
 ```
 
@@ -69,7 +71,7 @@ services:
       - citm_dns_names=gateway.internal
     ports:
       # Expose only the HTTP proxy port
-      - "0.0.0.0:8380:8380"
+      - "0.0.0.0:8380:${MITMPROXY_HTTP_PROXY_PORT:-19080}"
     networks:
       - my-citm-network
 
@@ -118,11 +120,11 @@ export https_proxy=http://127.0.0.1:8380
 #### 1. Reach the Gateway Utils Endpoint
 
 ```bash
-curl -k https://utils.citm.internal:3858
+curl -k "https://utils.citm.internal:${CADDY_ADMIN_PORT:-19058}"
 ```
 
-This request targets the `utils` endpoint in the CITM container on port `3858`.
-Expected result: JSON output that includes `dns_entries`.
+This request targets the `utils` endpoint in the CITM container on
+`CADDY_ADMIN_PORT`. Expected result: JSON output that includes `dns_entries`.
 
 #### 2. Reach whoami Directly by DNS Name
 

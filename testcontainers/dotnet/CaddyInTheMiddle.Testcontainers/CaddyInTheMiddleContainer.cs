@@ -46,7 +46,7 @@ public sealed class CaddyInTheMiddleContainer(CaddyInTheMiddleConfiguration conf
     }
 
     /// <summary>
-    /// Gets the address of the HTTP proxy (port 8380).
+    /// Gets the address of the HTTP proxy.
     /// </summary>
     /// <returns>The HTTP proxy address.</returns>
     public string GetHttpProxyAddress()
@@ -55,7 +55,7 @@ public sealed class CaddyInTheMiddleContainer(CaddyInTheMiddleConfiguration conf
     }
 
     /// <summary>
-    /// Gets the address of the SOCKS5 proxy (port 8381).
+    /// Gets the address of the SOCKS5 proxy.
     /// </summary>
     /// <returns>The SOCKS5 proxy address.</returns>
     public string GetSocksProxyAddress()
@@ -64,7 +64,7 @@ public sealed class CaddyInTheMiddleContainer(CaddyInTheMiddleConfiguration conf
     }
 
     /// <summary>
-    /// Gets the base URL for the Caddy admin API (port 3858).
+    /// Gets the base URL for the Caddy admin API.
     /// </summary>
     /// <param name="subdomains">Optional subdomains to prepend to the hostname.</param>
     /// <returns>The Admin API base URL.</returns>

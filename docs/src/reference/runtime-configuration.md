@@ -16,10 +16,12 @@ variables consumed by `Dockerfile`, `caddy`, `citm-utils`, and
 ### Environment variables
 
 - `CITM_NETWORK`: network name used for service discovery and examples.
+- Runtime port variables are documented in [Default Ports](default-ports.md).
 - `CITM_DNS_NETWORK`: explicit DNS discovery network override.
 - `CITM_DNS_CACHE_TTL_SECONDS`: positive float cache TTL.
 - `CITM_DNS_LISTEN_HOST`: DNS forwarder bind host.
-- `CITM_DNS_LISTEN_PORT`: positive integer DNS forwarder port.
+- `CITM_DNS_LISTEN_PORT`: positive integer DNS forwarder port. See
+  [Default Ports](default-ports.md).
 - `CITM_DNS_UPSTREAM_TIMEOUT_SECONDS`: positive float timeout for upstream DNS.
 - `MOCK_PATHS`: comma-separated file patterns for mock templates.
 - `SUPERVISOR_SOCKET`: optional supervisor RPC socket path.
@@ -31,9 +33,9 @@ variables consumed by `Dockerfile`, `caddy`, `citm-utils`, and
 
 ## Defaults
 
+- Runtime port defaults are documented in [Default Ports](default-ports.md).
 - `CITM_DNS_CACHE_TTL_SECONDS=1.0`
 - `CITM_DNS_LISTEN_HOST=0.0.0.0`
-- `CITM_DNS_LISTEN_PORT=53`
 - `CITM_DNS_UPSTREAM_TIMEOUT_SECONDS=2.0`
 - DNS static records include `localhost` and `citm.internal` to `127.0.0.1`.
 - If `CITM_DNS_NETWORK` is unset, discovery falls back to `CITM_NETWORK`.
@@ -52,6 +54,8 @@ services:
       - ./mocks:/citm-mocks:ro
     environment:
       - CITM_NETWORK=my-citm-network
+      - CADDY_ADMIN_PORT=29058
+      - MITMPROXY_HTTP_PROXY_PORT=29080
       - CITM_DNS_CACHE_TTL_SECONDS=1.0
       - MOCK_PATHS=/citm-mocks/**/*.mako
 ```

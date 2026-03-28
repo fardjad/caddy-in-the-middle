@@ -19,6 +19,19 @@ EOF
 
 FROM mitmproxy/mitmproxy
 
+# BEGIN GENERATED DEFAULT PORT ENV
+ENV CADDY_HTTP_PORT=80 \
+    CADDY_HTTPS_PORT=443 \
+    CADDY_ADMIN_PORT=19058 \
+    MITMPROXY_HTTP_PROXY_PORT=19080 \
+    MITMPROXY_SOCKS_PROXY_PORT=19081 \
+    MITMPROXY_WEB_PORT=19082 \
+    CITM_UTILS_WEB_PORT=19000 \
+    SUPERVISOR_WEBUI_PORT=19001 \
+    CITM_DNS_LISTEN_PORT=53
+# END GENERATED DEFAULT PORT ENV
+ENV CITM_DNS_LISTEN_HOST=0.0.0.0
+
 # Common tools
 RUN <<EOF
 apt-get update -y
@@ -74,7 +87,7 @@ COPY --chmod=755 supervisor/start-supervisord.sh /start-supervisord
 HEALTHCHECK --interval=5s --timeout=5s --start-period=5s --retries=60 \
     CMD curl -fsS \
     --connect-timeout 3 \
-    https://utils.citm.internal:3858/health \
+    https://utils.citm.internal:${CADDY_ADMIN_PORT}/health \
     || exit 1
 
 CMD ["/start-supervisord"]

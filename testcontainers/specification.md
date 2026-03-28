@@ -20,10 +20,28 @@ The module must expose the following container ports and map them to random host
 ports (unless the user explicitly binds them, though random is preferred for
 tests).
 
-| Port | Description | | :--- | :--- | | `80` | HTTP traffic (incoming to Caddy)
-| | `443` | HTTPS traffic (incoming to Caddy) | | `8380` | HTTP Proxy (outgoing
-via Caddy) | | `8381` | SOCKS5 Proxy (outgoing via Caddy) | | `3858` | Admin API
-|
+<!-- BEGIN GENERATED DEFAULT PORTS -->
+
+- `80`: HTTP traffic (incoming to Caddy)
+- `443`: HTTPS traffic (incoming to Caddy)
+- `19080`: HTTP proxy
+- `19081`: SOCKS5 proxy
+- `19058`: Admin and utility virtual hosts through Caddy
+
+The container also supports runtime port overrides through environment
+variables. The defaults are:
+
+- `CADDY_HTTP_PORT=80`
+- `CADDY_HTTPS_PORT=443`
+- `CADDY_ADMIN_PORT=19058`
+- `MITMPROXY_HTTP_PROXY_PORT=19080`
+- `MITMPROXY_SOCKS_PROXY_PORT=19081`
+- `MITMPROXY_WEB_PORT=19082`
+- `CITM_UTILS_WEB_PORT=19000`
+- `SUPERVISOR_WEBUI_PORT=19001`
+- `CITM_DNS_LISTEN_PORT=53`
+
+<!-- END GENERATED DEFAULT PORTS -->
 
 ### 1.2 Default Mounts
 
@@ -105,14 +123,19 @@ allow for proper subdomain routing.
 Some methods accept an optional list of subdomains. If provided, they are
 prepended to the host (e.g., `sub1.sub2.<host>`).
 
+<!-- BEGIN GENERATED DEFAULT PORT HELPERS -->
+
 - **`GetCaddyHttpBaseUrl(subdomains...)`**: Returns
   `http://[subdomains.]<host>:<mapped_port_80>`.
 - **`GetCaddyHttpsBaseUrl(subdomains...)`**: Returns
   `https://[subdomains.]<host>:<mapped_port_443>`.
-- **`GetHttpProxyAddress()`**: Returns `http://<host>:<mapped_port_8380>`.
-- **`GetSocksProxyAddress()`**: Returns `socks5://<host>:<mapped_port_8381>`.
+- **`GetHttpProxyAddress()`**: Returns `http://<host>:<mapped_port_19080>`.
+- **`GetSocksProxyAddress()`**: Returns `socks5://<host>:<mapped_port_19081>`.
 - **`GetAdminBaseUrl(subdomains...)`**: Returns
-  `https://[subdomains.]<host>:<mapped_port_3858>`.
+  `https://[subdomains.]<host>:<mapped_port_19058>`.
+
+<!-- END GENERATED DEFAULT PORT HELPERS -->
+
 - **`CreateHttpClientHandler(ignoreSslErrors=true)`**: Returns an HTTP client
   handler (or equivalent) configured to use the container's HTTP proxy. It
   should default to ignoring SSL errors (since CITM uses self-signed certs).

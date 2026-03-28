@@ -2,8 +2,9 @@
 
 ## What it is
 
-Admin endpoints are served through Caddy on port `3858` and routed to
-`citm-utils-web`, `supervisor-webui`, and `mitmweb`.
+Admin endpoints are served through Caddy on `CADDY_ADMIN_PORT` and routed to
+`citm-utils-web`, `supervisor-webui`, and `mitmweb`. Default values are
+documented in [Default Ports](default-ports.md).
 
 ## Allowed values
 
@@ -23,17 +24,20 @@ Admin endpoints are served through Caddy on port `3858` and routed to
 
 ### Host routing contracts
 
-1. Host `mitm.citm.*` on port `3858` routes to internal `mitmweb` on `8382`.
-1. Host `utils.citm.*` on port `3858` routes to internal `citm-utils-web` on
-   `5000`.
-1. Host `supervisor.citm.*` on port `3858` routes to internal `supervisor-webui`
-   on `5001`.
+1. Host `mitm.citm.*` on `CADDY_ADMIN_PORT` routes to internal `mitmweb` on
+   `MITMPROXY_WEB_PORT`.
+1. Host `utils.citm.*` on `CADDY_ADMIN_PORT` routes to internal `citm-utils-web`
+   on `CITM_UTILS_WEB_PORT`.
+1. Host `supervisor.citm.*` on `CADDY_ADMIN_PORT` routes to internal
+   `supervisor-webui` on `SUPERVISOR_WEBUI_PORT`.
 
 ## Defaults
 
 1. Health check DNS name is `citm.internal`.
-1. Health check expects `https://citm.internal:3858` to return `404`.
-1. Health check expects `https://mitm.citm.internal:3858` to return `200`.
+1. Health check expects `https://citm.internal:${CADDY_ADMIN_PORT}` to return
+   `404`.
+1. Health check expects `https://mitm.citm.internal:${CADDY_ADMIN_PORT}` to
+   return `200`.
 1. HAR output path is `/mitm-dump/dump.har`.
 
 ## Examples
