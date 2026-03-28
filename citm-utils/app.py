@@ -11,7 +11,6 @@ from flask import Flask, jsonify, request
 
 from mitmproxy.routes import mitmproxy_blueprint
 from service_discovery import get_citm_dns_entries
-from supervisor.routes import supervisor_blueprint
 
 
 def create_app(
@@ -28,7 +27,6 @@ def create_app(
 
     app = Flask(__name__)
     app.json.compact = False
-    app.register_blueprint(supervisor_blueprint)
     app.register_blueprint(mitmproxy_blueprint)
 
     @app.route(

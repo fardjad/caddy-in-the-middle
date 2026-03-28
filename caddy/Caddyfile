@@ -55,6 +55,17 @@ https://citm.internal:3858, https://*.citm.internal:3858, https://citm.localhost
 		}
 	}
 
+	@supervisor `{host}.startsWith("supervisor.citm.")`
+	handle @supervisor {
+		reverse_proxy {
+			to 127.0.0.1:5001
+
+			transport http {
+				network_proxy none
+			}
+		}
+	}
+
 	respond "Unknown service" 404
 }
 

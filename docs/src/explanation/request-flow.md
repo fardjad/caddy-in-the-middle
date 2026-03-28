@@ -35,6 +35,7 @@ flowchart LR
 Admin flow:
 
 - `utils.citm.*` hosts route to `citm-utils-web`.
+- `supervisor.citm.*` hosts route to `supervisor-webui`.
 - `mitm.citm.*` hosts route to `mitmweb` backend.
 
 ## Why this design

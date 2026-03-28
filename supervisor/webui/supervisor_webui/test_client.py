@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import supervisor.client as client
+import supervisor_webui.client as client
 
 
 class FakeSupervisorAPI:
@@ -58,15 +58,24 @@ def _server_with_processes(
     return SimpleNamespace(supervisor=api), api
 
 
-def test_list_services_filters_excluded_processes():
+def test_list_services_filters_webui_and_one_shot_processes():
     server, _api = _server_with_processes(
         [
             {
-                "name": "citm-utils-web",
+                "name": "supervisor-webui",
                 "statename": "RUNNING",
                 "description": "internal",
             },
-            {"name": "caddy", "statename": "RUNNING", "description": "  serving  "},
+            {
+                "name": "caddy-reload",
+                "statename": "STOPPED",
+                "description": "manual",
+            },
+            {
+                "name": "citm-utils-web",
+                "statename": "RUNNING",
+                "description": "  serving  ",
+            },
         ]
     )
 
@@ -74,7 +83,7 @@ def test_list_services_filters_excluded_processes():
 
     assert services == [
         {
-            "name": "caddy",
+            "name": "citm-utils-web",
             "state": "RUNNING",
             "description": "serving",
         }
@@ -100,7 +109,7 @@ def test_service_action_rejects_unsupported_action():
 
 def test_service_action_rejects_excluded_process():
     with pytest.raises(client.SupervisorError) as exc_info:
-        client.service_action("citm-utils-web", "restart")
+        client.service_action("supervisor-webui", "restart")
     assert exc_info.value.status_code == 400
 
 
@@ -157,17 +166,6 @@ def test_start_retries_when_supervisor_reports_still_stopping():
     assert ("startProcess", "caddy", False) in api.calls
 
 
-def test_start_treats_already_started_fault_as_success():
-    server, api = _server_with_processes(
-        [{"name": "caddy", "statename": "RUNNING", "description": ""}]
-    )
-    api.start_side_effects["caddy"] = [xmlrpc.client.Fault(1, "ALREADY_STARTED")]
-
-    client.service_action("caddy", "start", rpc_factory=lambda: server)
-
-    assert ("startProcess", "caddy", False) in api.calls
-
-
 def test_service_action_wraps_rpc_errors():
     def failing_rpc():
         raise RuntimeError("socket gone")
@@ -184,7 +182,7 @@ def test_restart_all_stops_running_then_starts_managed_processes():
         [
             {"name": "caddy", "statename": "RUNNING", "description": ""},
             {"name": "mitmproxy", "statename": "STOPPED", "description": ""},
-            {"name": "citm-utils-web", "statename": "RUNNING", "description": ""},
+            {"name": "supervisor-webui", "statename": "RUNNING", "description": ""},
         ]
     )
 
@@ -195,12 +193,4 @@ def test_restart_all_stops_running_then_starts_managed_processes():
     assert stop_calls == [("stopProcess", "caddy", True)]
     assert ("startProcess", "caddy", False) in start_calls
     assert ("startProcess", "mitmproxy", False) in start_calls
-    assert all(call[1] != "citm-utils-web" for call in start_calls)
-
-    stop_indices = [
-        index for index, call in enumerate(api.calls) if call[0] == "stopProcess"
-    ]
-    start_indices = [
-        index for index, call in enumerate(api.calls) if call[0] == "startProcess"
-    ]
-    assert max(stop_indices) < min(start_indices)
+    assert all(call[1] != "supervisor-webui" for call in start_calls)

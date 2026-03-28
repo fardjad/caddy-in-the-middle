@@ -18,6 +18,7 @@ processes behind `supervisord` in one container.
 ### Internal service ports
 
 - `5000/tcp`: `citm-utils-web` (Flask + gunicorn)
+- `5001/tcp`: `supervisor-webui` (Flask + gunicorn)
 - `8382/tcp`: `mitmweb` UI backend
 - `53/udp` and `53/tcp`: DNS forwarder listener
 

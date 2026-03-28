@@ -30,6 +30,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 COPY --from=setup-devenv /setup-devenv.sh /setup-devenv.sh
 RUN /bin/bash /setup-devenv.sh && rm /setup-devenv.sh
 
+# Supervisor Web UI
+COPY supervisor/webui /supervisor/webui
+WORKDIR /supervisor/webui
+RUN rm -rf .venv __pycache__ && uv sync
+
 # Supervisord
 RUN <<EOF
 apt-get update -y
@@ -41,6 +46,7 @@ mkdir -p /var/run
 mkdir -p /etc/supervisor/conf.d
 EOF
 COPY supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY supervisor/conf.d/webui.conf /etc/supervisor/conf.d/webui.conf
 
 # Caddy
 COPY --from=caddy:2 /usr/bin/caddy /usr/bin/caddy

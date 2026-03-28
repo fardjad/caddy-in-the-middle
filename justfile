@@ -103,6 +103,12 @@ test:
     #!/usr/bin/env bash
     set -euo pipefail
 
+    echo "Running supervisor web UI tests"
+    (
+        cd supervisor/webui
+        uv run pytest
+    )
+
     echo "Running citm-utils tests"
     (
         cd citm-utils

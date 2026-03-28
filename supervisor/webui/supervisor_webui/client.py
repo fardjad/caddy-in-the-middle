@@ -1,16 +1,16 @@
+import http.client
 import os
 import socket
-import http.client
-import xmlrpc.client
 import time
+import xmlrpc.client
 from collections.abc import Callable
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Internal: processes we never want to manage via the UI/API
-_EXCLUDED_PROCESSES = {"citm-utils-web"}
+_EXCLUDED_PROCESSES = {"supervisor-webui", "caddy-reload"}
 
 
-def _is_managed(proc_info: Dict[str, Any]) -> bool:
+def _is_managed(proc_info: dict[str, Any]) -> bool:
     return proc_info.get("name") not in _EXCLUDED_PROCESSES
 
 
@@ -62,7 +62,7 @@ def _start_with_retry(
             raise
 
 
-def _get_process(server, name: str) -> Dict[str, Any]:
+def _get_process(server, name: str) -> dict[str, Any]:
     return server.supervisor.getProcessInfo(name)
 
 
@@ -75,7 +75,7 @@ def _stop_if_running(server, name: str) -> None:
 
 class SupervisorError(Exception):
     def __init__(
-        self, message: str, *, status_code: int = 502, details: Optional[str] = None
+        self, message: str, *, status_code: int = 502, details: str | None = None
     ):
         super().__init__(message)
         self.message = message
@@ -83,7 +83,7 @@ class SupervisorError(Exception):
         self.details = details or ""
 
 
-def list_services(*, rpc_factory: Callable[[], Any] = _rpc) -> List[Dict[str, str]]:
+def list_services(*, rpc_factory: Callable[[], Any] = _rpc) -> list[dict[str, str]]:
     try:
         server = rpc_factory()
         procs = server.supervisor.getAllProcessInfo()
@@ -94,14 +94,14 @@ def list_services(*, rpc_factory: Callable[[], Any] = _rpc) -> List[Dict[str, st
             details=str(e),
         )
 
-    services: List[Dict[str, str]] = []
+    services: list[dict[str, str]] = []
     for p in procs:
         if not _is_managed(p):
             continue
         services.append(
             {
-                "name": (p.get("name") or ""),
-                "state": (p.get("statename") or ""),
+                "name": p.get("name") or "",
+                "state": p.get("statename") or "",
                 "description": (p.get("description") or "").strip(),
             }
         )
@@ -124,32 +124,21 @@ def service_action(
         server = rpc_factory()
         if action == "start":
             _start_with_retry(server, name, sleep=sleep)
-
         elif action == "stop":
-            # Only stop if currently running; EXITED/STOPPED/FATAL are already not running.
             _stop_if_running(server, name)
-
         elif action == "restart":
             info = _get_process(server, name)
             state = info.get("statename")
 
-            # If it's running, stop first then start.
             if state == "RUNNING":
                 _stop_if_running(server, name)
                 _start_with_retry(server, name, sleep=sleep)
-
-            # If it's not running (EXITED/STOPPED/FATAL/UNKNOWN), just start it.
             elif state in {"EXITED", "STOPPED", "FATAL", "UNKNOWN"}:
                 _start_with_retry(server, name, sleep=sleep)
-
-            # Transient states: try to start with retry; if still not possible, bubble error.
             elif state in {"STARTING", "STOPPING", "BACKOFF"}:
                 _start_with_retry(server, name, sleep=sleep)
-
             else:
-                # Default: attempt a start, letting Supervisor raise if invalid.
                 _start_with_retry(server, name, sleep=sleep)
-
     except Exception as e:
         raise SupervisorError(
             "Supervisor action failed via RPC",
@@ -180,7 +169,6 @@ def restart_all(
             if not name:
                 continue
             _start_with_retry(server, name, sleep=sleep)
-
     except Exception as e:
         raise SupervisorError(
             "Supervisor action failed via RPC",

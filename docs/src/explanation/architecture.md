@@ -12,7 +12,8 @@ The container starts `supervisord`, which launches these processes:
 
 - `caddy`: ingress and admin virtual-host routing
 - `mitmproxy` (`mitmweb`): HTTP/S proxying and flow capture
-- `citm-utils-web`: utility and supervisor HTTP APIs
+- `citm-utils-web`: utility HTTP APIs
+- `supervisor-webui`: supervisor UI and control API
 - `citm-utils-dns-forwarder`: DNS interception for the entire container
 
 The DNS forwarder updates container resolver behavior to localhost, so all
@@ -24,11 +25,13 @@ flowchart LR
     Client[Client] --> Caddy[Caddy 80/443/3858]
     Caddy --> Mitm[mitmproxy 8380/8381]
     Caddy --> Utils[citm-utils-web 5000]
+    Caddy --> Supervisor[supervisor-webui 5001]
     Mitm --> Apps[Target Services]
     DNS[citm-utils-dns-forwarder 53]
     Caddy --> DNS
     Mitm --> DNS
     Utils --> DNS
+    Supervisor --> DNS
     DNS --> Docker[Docker API]
 ```
 
