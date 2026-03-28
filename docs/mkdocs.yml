@@ -33,6 +33,7 @@ nav:
     - HTTP Proxy and DNS Forwarder: tutorials/http-proxy-and-dns-forwarder.md
     - Mocking: tutorials/mocking.md
   - How-To Guides:
+    - Configure Caddy Layers: how-to/configure-caddy.md
     - Inspect Traffic and Export HAR: how-to/inspect-traffic-and-export-har.md
     - Configure Service Discovery: how-to/configure-service-discovery.md
     - Author Mock Templates: how-to/author-mock-templates.md

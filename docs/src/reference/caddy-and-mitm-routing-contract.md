@@ -12,8 +12,9 @@ uses request headers to route the upstream target and mark flows.
 1. Header `X-MITM-Emoji` is optional. The value should be a supported GitHub
    emoji token such as `:rocket:` or `:one:` from the
    [GitHub Emoji API](https://api.github.com/emojis).
-1. Caddy snippet `import dev_certs` enables on-demand TLS with the internal CA
-   loaded from `/certs/rootCA.pem` and `/certs/rootCA-key.pem`.
+1. Caddy snippet `import dev_certs` is provided by CITM-owned config under
+   `/etc/caddy/citm.d/`. It enables on-demand TLS with the internal CA loaded
+   from `/certs/rootCA.pem` and `/certs/rootCA-key.pem`.
 
 ## Defaults
 
@@ -40,4 +41,5 @@ whoami.localhost {
 
 1. Invalid `X-MITM-To` causes request blocking in `rewrite_host`.
 1. Blocked requests are marked with warning metadata and an error comment.
-1. Unknown `*.citm.*` utility hosts in base Caddyfile return HTTP `404`.
+1. Unknown `*.citm.*` utility hosts in the CITM-owned Caddy config return HTTP
+   `404`.

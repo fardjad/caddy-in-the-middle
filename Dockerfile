@@ -63,8 +63,10 @@ COPY supervisor/conf.d/webui.conf /etc/supervisor/conf.d/webui.conf
 
 # Caddy
 COPY --from=caddy:2 /usr/bin/caddy /usr/bin/caddy
-RUN mkdir -p /etc/caddy && mkdir -p /etc/caddy/conf.d
+RUN mkdir -p /etc/caddy /etc/caddy/conf.d /etc/caddy/citm.d
 COPY ./caddy/Caddyfile /etc/caddy/Caddyfile
+COPY ./caddy/global-options.Caddyfile /etc/caddy/global-options.Caddyfile
+COPY ./caddy/citm.d /etc/caddy/citm.d
 COPY supervisor/conf.d/caddy.conf /etc/supervisor/conf.d/caddy.conf
 
 # MITM Proxy
