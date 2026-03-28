@@ -26,14 +26,14 @@ tests).
 - `443`: HTTPS traffic (incoming to Caddy)
 - `19080`: HTTP proxy
 - `19081`: SOCKS5 proxy
-- `19058`: Admin and utility virtual hosts through Caddy
+- `63858`: Admin and utility virtual hosts through Caddy
 
 The container also supports runtime port overrides through environment
 variables. The defaults are:
 
 - `CADDY_HTTP_PORT=80`
 - `CADDY_HTTPS_PORT=443`
-- `CADDY_ADMIN_PORT=19058`
+- `CADDY_ADMIN_PORT=63858`
 - `MITMPROXY_HTTP_PROXY_PORT=19080`
 - `MITMPROXY_SOCKS_PROXY_PORT=19081`
 - `MITMPROXY_WEB_PORT=19082`
@@ -132,7 +132,7 @@ prepended to the host (e.g., `sub1.sub2.<host>`).
 - **`GetHttpProxyAddress()`**: Returns `http://<host>:<mapped_port_19080>`.
 - **`GetSocksProxyAddress()`**: Returns `socks5://<host>:<mapped_port_19081>`.
 - **`GetAdminBaseUrl(subdomains...)`**: Returns
-  `https://[subdomains.]<host>:<mapped_port_19058>`.
+  `https://[subdomains.]<host>:<mapped_port_63858>`.
 
 <!-- END GENERATED DEFAULT PORT HELPERS -->
 

@@ -39,7 +39,7 @@ public class CaddyInTheMiddleBuilder : ContainerBuilder<CaddyInTheMiddleBuilder,
     /// <summary>
     /// The user-mapped port for the Admin API.
     /// </summary>
-    public const ushort AdminPort = 19058;
+    public const ushort AdminPort = 63858;
     // END GENERATED DEFAULT PORTS
 
     /// <summary>

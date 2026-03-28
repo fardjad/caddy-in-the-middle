@@ -9,7 +9,7 @@ is `hack/update_default_ports.py`.
 
 - `CADDY_HTTP_PORT=80`: Exposed port for `caddy`. HTTP ingress.
 - `CADDY_HTTPS_PORT=443`: Exposed port for `caddy`. HTTPS ingress.
-- `CADDY_ADMIN_PORT=19058`: Exposed port for `caddy`. Admin and utility virtual
+- `CADDY_ADMIN_PORT=63858`: Exposed port for `caddy`. Admin and utility virtual
   hosts.
 - `MITMPROXY_HTTP_PROXY_PORT=19080`: Exposed port for `mitmproxy`. HTTP proxy
   listener.

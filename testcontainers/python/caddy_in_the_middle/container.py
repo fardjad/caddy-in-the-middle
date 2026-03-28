@@ -20,7 +20,7 @@ class CitmContainer(DockerContainer):
     HTTPS_PORT = 443
     HTTP_PROXY_PORT = 19080
     SOCKS_PROXY_PORT = 19081
-    ADMIN_PORT = 19058
+    ADMIN_PORT = 63858
     # END GENERATED DEFAULT PORTS
 
     def __init__(self, image: str = f"fardjad/citm:{__version__}", **kwargs):

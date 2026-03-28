@@ -14,7 +14,7 @@ from mitmproxy.routes import mitmproxy_blueprint
 from service_discovery import get_citm_dns_entries
 
 # BEGIN GENERATED DEFAULT PORTS
-DEFAULT_CADDY_ADMIN_PORT = 19058
+DEFAULT_CADDY_ADMIN_PORT = 63858
 DEFAULT_CITM_UTILS_WEB_PORT = 19000
 # END GENERATED DEFAULT PORTS
 

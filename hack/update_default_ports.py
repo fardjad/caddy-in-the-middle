@@ -26,7 +26,7 @@ PORTS = (
     Port("CADDY_HTTPS_PORT", 443, "Exposed", "caddy", "HTTPS ingress"),
     Port(
         "CADDY_ADMIN_PORT",
-        19058,
+        63858,
         "Exposed",
         "caddy",
         "Admin and utility virtual hosts",
@@ -279,6 +279,21 @@ def render_default_ports_doc() -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_devcontainer_ports_block() -> str:
+    lines = [
+        f'- \'0.0.0.0:${{CADDY_ADMIN_PORT:-{PORT_BY_ENV["CADDY_ADMIN_PORT"].default}}}:{PORT_BY_ENV["CADDY_ADMIN_PORT"].default}\'',
+        f'- \'0.0.0.0:${{CADDY_HTTP_PORT:-{PORT_BY_ENV["CADDY_HTTP_PORT"].default}}}:{PORT_BY_ENV["CADDY_HTTP_PORT"].default}\'',
+        f'- \'0.0.0.0:${{CADDY_HTTPS_PORT:-{PORT_BY_ENV["CADDY_HTTPS_PORT"].default}}}:{PORT_BY_ENV["CADDY_HTTPS_PORT"].default}/udp\'',
+        f'- \'0.0.0.0:${{CADDY_HTTPS_PORT:-{PORT_BY_ENV["CADDY_HTTPS_PORT"].default}}}:{PORT_BY_ENV["CADDY_HTTPS_PORT"].default}\'',
+        f'- \'0.0.0.0:${{CITM_UTILS_WEB_PORT:-{PORT_BY_ENV["CITM_UTILS_WEB_PORT"].default}}}:{PORT_BY_ENV["CITM_UTILS_WEB_PORT"].default}\'',
+        f'- \'0.0.0.0:${{MITMPROXY_HTTP_PROXY_PORT:-{PORT_BY_ENV["MITMPROXY_HTTP_PROXY_PORT"].default}}}:{PORT_BY_ENV["MITMPROXY_HTTP_PROXY_PORT"].default}\'',
+        f'- \'0.0.0.0:${{MITMPROXY_SOCKS_PROXY_PORT:-{PORT_BY_ENV["MITMPROXY_SOCKS_PROXY_PORT"].default}}}:{PORT_BY_ENV["MITMPROXY_SOCKS_PROXY_PORT"].default}\'',
+        f'- \'0.0.0.0:${{MITMPROXY_WEB_PORT:-{PORT_BY_ENV["MITMPROXY_WEB_PORT"].default}}}:{PORT_BY_ENV["MITMPROXY_WEB_PORT"].default}\'',
+        f'- \'0.0.0.0:${{SUPERVISOR_WEBUI_PORT:-{PORT_BY_ENV["SUPERVISOR_WEBUI_PORT"].default}}}:{PORT_BY_ENV["SUPERVISOR_WEBUI_PORT"].default}\'',
+    ]
+    return "\n".join(f"      {line}" for line in lines)
+
+
 def replace_block(
     text: str, begin_marker: str, end_marker: str, replacement: str
 ) -> str:
@@ -321,6 +336,14 @@ def main() -> int:
             "# BEGIN GENERATED DEFAULT PORT ENV",
             "# END GENERATED DEFAULT PORT ENV",
             render_dockerfile_env_block(),
+        )
+    )
+    updates.append(
+        update_block(
+            ".devcontainer/compose.yml",
+            "      # BEGIN GENERATED EXPOSED PORTS",
+            "      # END GENERATED EXPOSED PORTS",
+            render_devcontainer_ports_block(),
         )
     )
     updates.append(

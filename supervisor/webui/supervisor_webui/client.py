@@ -7,7 +7,7 @@ from collections.abc import Callable
 from typing import Any
 
 # Internal: processes we never want to manage via the UI/API
-_EXCLUDED_PROCESSES = {"supervisor-webui", "caddy-reload"}
+_EXCLUDED_PROCESSES = {"supervisor-webui"}
 
 
 def _is_managed(proc_info: dict[str, Any]) -> bool:
