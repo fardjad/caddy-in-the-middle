@@ -3,7 +3,11 @@ from __future__ import annotations
 import socket
 from typing import Any
 
-from app import DEFAULT_CADDY_ADMIN_PORT, create_app
+from app import (
+    DEFAULT_CADDY_ADMIN_PORT,
+    DEFAULT_MITMPROXY_WEB_PORT,
+    create_app,
+)
 
 
 class FakeDockerClient:
@@ -70,12 +74,13 @@ def test_create_app_delays_docker_client_creation_until_request():
 
 
 def test_health_returns_ok_when_all_checks_pass():
-    def fake_get(url: str, timeout: int) -> FakeResponse:
+    def fake_get(url: str, timeout: int, **kwargs: Any) -> FakeResponse:
         status_map = {
             f"https://citm.internal:{DEFAULT_CADDY_ADMIN_PORT}": 404,
             f"https://mitm.citm.internal:{DEFAULT_CADDY_ADMIN_PORT}": 200,
         }
         assert timeout == 2
+        assert kwargs == {}
         return FakeResponse(status_map[url])
 
     def fake_getaddrinfo(*_args, **_kwargs):
@@ -105,7 +110,7 @@ def test_health_returns_ok_when_all_checks_pass():
 
 
 def test_health_returns_unhealthy_when_any_check_fails():
-    def failing_get(_url: str, timeout: int) -> FakeResponse:
+    def failing_get(_url: str, timeout: int, **_kwargs: Any) -> FakeResponse:
         assert timeout == 2
         raise TimeoutError("network timeout")
 
@@ -132,3 +137,70 @@ def test_health_returns_unhealthy_when_any_check_fails():
     assert checks["dns_forwarder_resolution"]["ok"] is False
     assert checks["caddy_serving"]["ok"] is False
     assert checks["mitmproxy_serving"]["ok"] is False
+
+
+def test_health_skips_disabled_checks_and_uses_direct_mitmproxy_when_caddy_disabled(
+    monkeypatch,
+):
+    requests_made: list[tuple[str, dict[str, Any]]] = []
+
+    def fake_get(url: str, timeout: int, **kwargs: Any) -> FakeResponse:
+        assert timeout == 2
+        requests_made.append((url, kwargs))
+        return FakeResponse(200)
+
+    def unexpected_getaddrinfo(*_args, **_kwargs):
+        raise AssertionError("dns resolution should be skipped when disabled")
+
+    monkeypatch.setenv("ENABLE_CADDY", "false")
+    monkeypatch.setenv("ENABLE_CITM_UTILS_DNS_FORWARDER", "0")
+    monkeypatch.setenv("ENABLE_MITMPROXY", "1")
+
+    app = create_app(
+        docker_client=FakeDockerClient(ping_result=True),
+        http_get=fake_get,
+        addrinfo_getter=unexpected_getaddrinfo,
+    )
+
+    response = app.test_client().get("/health")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    checks = {check["check"]: check for check in payload["checks"]}
+    assert checks["dns_forwarder_resolution"]["skipped"] is True
+    assert checks["caddy_serving"]["skipped"] is True
+    assert checks["mitmproxy_serving"]["url"] == (
+        f"http://127.0.0.1:{DEFAULT_MITMPROXY_WEB_PORT}"
+    )
+    assert requests_made == [
+        (
+            f"http://127.0.0.1:{DEFAULT_MITMPROXY_WEB_PORT}",
+            {"headers": {"Authorization": "Bearer secret"}},
+        )
+    ]
+
+
+def test_health_skips_disabled_mitmproxy(monkeypatch):
+    def fake_get(url: str, timeout: int, **kwargs: Any) -> FakeResponse:
+        assert url == f"https://citm.internal:{DEFAULT_CADDY_ADMIN_PORT}"
+        assert timeout == 2
+        assert kwargs == {}
+        return FakeResponse(404)
+
+    def fake_getaddrinfo(*_args, **_kwargs):
+        return [(socket.AF_INET, 0, 0, "", ("127.0.0.1", 0))]
+
+    monkeypatch.setenv("ENABLE_MITMPROXY", "false")
+
+    app = create_app(
+        docker_client=FakeDockerClient(ping_result=True),
+        http_get=fake_get,
+        addrinfo_getter=fake_getaddrinfo,
+    )
+
+    response = app.test_client().get("/health")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    checks = {check["check"]: check for check in payload["checks"]}
+    assert checks["mitmproxy_serving"]["skipped"] is True

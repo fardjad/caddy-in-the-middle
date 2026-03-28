@@ -16,9 +16,24 @@ from service_discovery import get_citm_dns_entries
 # BEGIN GENERATED DEFAULT PORTS
 DEFAULT_CADDY_ADMIN_PORT = 63858
 DEFAULT_CITM_UTILS_WEB_PORT = 19000
+DEFAULT_MITMPROXY_WEB_PORT = 19082
 # END GENERATED DEFAULT PORTS
 
 DockerClientFactory = Callable[[], docker.DockerClient]
+
+
+def get_enabled_flag(name: str) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return True
+
+    normalized = value.strip().lower()
+    if normalized in {"1", "true"}:
+        return True
+    if normalized in {"0", "false"}:
+        return False
+
+    return True
 
 
 def create_app(
@@ -34,6 +49,12 @@ def create_app(
 ) -> Flask:
     resolved_docker_client = docker_client
     caddy_admin_port = int(os.getenv("CADDY_ADMIN_PORT", str(DEFAULT_CADDY_ADMIN_PORT)))
+    mitmproxy_web_port = int(
+        os.getenv("MITMPROXY_WEB_PORT", str(DEFAULT_MITMPROXY_WEB_PORT))
+    )
+    caddy_enabled = get_enabled_flag("ENABLE_CADDY")
+    dns_forwarder_enabled = get_enabled_flag("ENABLE_CITM_UTILS_DNS_FORWARDER")
+    mitmproxy_enabled = get_enabled_flag("ENABLE_MITMPROXY")
 
     app = Flask(__name__)
     app.json.compact = False
@@ -95,53 +116,103 @@ def create_app(
         dns_name = "citm.internal"
         expected_ipv4 = "127.0.0.1"
 
-        try:
-            resolved_ips = sorted(
-                {
-                    info[4][0]
-                    for info in addrinfo_getter(
-                        dns_name,
-                        None,
-                        family=socket.AF_INET,
-                    )
-                }
-            )
+        if dns_forwarder_enabled:
+            try:
+                resolved_ips = sorted(
+                    {
+                        info[4][0]
+                        for info in addrinfo_getter(
+                            dns_name,
+                            None,
+                            family=socket.AF_INET,
+                        )
+                    }
+                )
+                results.append(
+                    {
+                        "check": "dns_forwarder_resolution",
+                        "name": dns_name,
+                        "expected_ipv4": expected_ipv4,
+                        "resolved_ipv4": resolved_ips,
+                        "ok": expected_ipv4 in resolved_ips,
+                    }
+                )
+            except Exception as e:
+                results.append(
+                    {
+                        "check": "dns_forwarder_resolution",
+                        "name": dns_name,
+                        "expected_ipv4": expected_ipv4,
+                        "ok": False,
+                        "error": str(e),
+                    }
+                )
+        else:
             results.append(
                 {
                     "check": "dns_forwarder_resolution",
-                    "name": dns_name,
-                    "expected_ipv4": expected_ipv4,
-                    "resolved_ipv4": resolved_ips,
-                    "ok": expected_ipv4 in resolved_ips,
-                }
-            )
-        except Exception as e:
-            results.append(
-                {
-                    "check": "dns_forwarder_resolution",
-                    "name": dns_name,
-                    "expected_ipv4": expected_ipv4,
-                    "ok": False,
-                    "error": str(e),
+                    "ok": True,
+                    "skipped": True,
+                    "reason": "ENABLE_CITM_UTILS_DNS_FORWARDER=false",
                 }
             )
 
-        service_checks = [
-            {
-                "check": "caddy_serving",
-                "url": f"https://citm.internal:{caddy_admin_port}",
-                "expected_status": 404,
-            },
-            {
-                "check": "mitmproxy_serving",
-                "url": f"https://mitm.citm.internal:{caddy_admin_port}",
-                "expected_status": 200,
-            },
-        ]
+        service_checks = []
+        if caddy_enabled:
+            service_checks.append(
+                {
+                    "check": "caddy_serving",
+                    "url": f"https://citm.internal:{caddy_admin_port}",
+                    "expected_status": 404,
+                    "request_kwargs": {},
+                }
+            )
+        else:
+            results.append(
+                {
+                    "check": "caddy_serving",
+                    "ok": True,
+                    "skipped": True,
+                    "reason": "ENABLE_CADDY=false",
+                }
+            )
+
+        if mitmproxy_enabled:
+            if caddy_enabled:
+                service_checks.append(
+                    {
+                        "check": "mitmproxy_serving",
+                        "url": f"https://mitm.citm.internal:{caddy_admin_port}",
+                        "expected_status": 200,
+                        "request_kwargs": {},
+                    }
+                )
+            else:
+                service_checks.append(
+                    {
+                        "check": "mitmproxy_serving",
+                        "url": f"http://127.0.0.1:{mitmproxy_web_port}",
+                        "expected_status": 200,
+                        "request_kwargs": {
+                            "headers": {"Authorization": "Bearer secret"}
+                        },
+                    }
+                )
+        else:
+            results.append(
+                {
+                    "check": "mitmproxy_serving",
+                    "ok": True,
+                    "skipped": True,
+                    "reason": "ENABLE_MITMPROXY=false",
+                }
+            )
 
         for service_check in service_checks:
             try:
-                response = http_get(service_check["url"], timeout=2)
+                response = http_get(
+                    service_check["url"], timeout=2, **service_check["request_kwargs"]
+                )
                 results.append(
                     {
                         "check": service_check["check"],

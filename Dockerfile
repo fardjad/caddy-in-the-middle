@@ -57,6 +57,7 @@ rm -rf /etc/supervisor
 mkdir -p /var/log/supervisor
 mkdir -p /var/run
 mkdir -p /etc/supervisor/conf.d
+mkdir -p /etc/supervisor/enabled-conf.d
 EOF
 COPY supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY supervisor/conf.d/webui.conf /etc/supervisor/conf.d/webui.conf
@@ -83,13 +84,14 @@ RUN uv pip install --system mako
 COPY citm-utils /citm-utils
 WORKDIR /citm-utils
 RUN rm -rf .venv __pycache__ && uv sync
-COPY supervisor/conf.d/citm-utils.conf /etc/supervisor/conf.d/citm-utils.conf
+COPY supervisor/conf.d/citm-utils-web.conf /etc/supervisor/conf.d/citm-utils-web.conf
+COPY supervisor/conf.d/citm-utils-dns-forwarder.conf /etc/supervisor/conf.d/citm-utils-dns-forwarder.conf
 COPY --chmod=755 supervisor/start-supervisord.sh /start-supervisord
 
 HEALTHCHECK --interval=5s --timeout=5s --start-period=5s --retries=60 \
     CMD curl -fsS \
     --connect-timeout 3 \
-    https://utils.citm.internal:${CADDY_ADMIN_PORT}/health \
+    http://127.0.0.1:${CITM_UTILS_WEB_PORT}/health \
     || exit 1
 
 CMD ["/start-supervisord"]

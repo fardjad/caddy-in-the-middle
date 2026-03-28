@@ -110,6 +110,7 @@ def render_citm_utils_python_constants() -> str:
         [
             f'DEFAULT_CADDY_ADMIN_PORT = {PORT_BY_ENV["CADDY_ADMIN_PORT"].default}',
             f'DEFAULT_CITM_UTILS_WEB_PORT = {PORT_BY_ENV["CITM_UTILS_WEB_PORT"].default}',
+            f'DEFAULT_MITMPROXY_WEB_PORT = {PORT_BY_ENV["MITMPROXY_WEB_PORT"].default}',
         ]
     )
 

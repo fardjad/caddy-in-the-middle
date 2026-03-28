@@ -38,6 +38,7 @@ documented in [Default Ports](default-ports.md).
    `404`.
 1. Health check expects `https://mitm.citm.internal:${CADDY_ADMIN_PORT}` to
    return `200`.
+1. Disabled checks are reported as skipped and do not fail `/health`.
 1. HAR output path is `/mitm-dump/dump.har`.
 
 ## Examples

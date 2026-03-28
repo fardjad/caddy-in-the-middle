@@ -23,6 +23,10 @@ variables consumed by `Dockerfile`, `caddy`, `citm-utils`, and
 - `CITM_DNS_LISTEN_PORT`: positive integer DNS forwarder port. See
   [Default Ports](default-ports.md).
 - `CITM_DNS_UPSTREAM_TIMEOUT_SECONDS`: positive float timeout for upstream DNS.
+- `ENABLE_CADDY`: `true`, `false`, `1`, or `0`.
+- `ENABLE_MITMPROXY`: `true`, `false`, `1`, or `0`.
+- `ENABLE_SUPERVISOR_WEBUI`: `true`, `false`, `1`, or `0`.
+- `ENABLE_CITM_UTILS_DNS_FORWARDER`: `true`, `false`, `1`, or `0`.
 - `MOCK_PATHS`: comma-separated file patterns for mock templates.
 - `SUPERVISOR_SOCKET`: optional supervisor RPC socket path.
 
@@ -37,6 +41,10 @@ variables consumed by `Dockerfile`, `caddy`, `citm-utils`, and
 - `CITM_DNS_CACHE_TTL_SECONDS=1.0`
 - `CITM_DNS_LISTEN_HOST=0.0.0.0`
 - `CITM_DNS_UPSTREAM_TIMEOUT_SECONDS=2.0`
+- `ENABLE_CADDY=true`
+- `ENABLE_MITMPROXY=true`
+- `ENABLE_SUPERVISOR_WEBUI=true`
+- `ENABLE_CITM_UTILS_DNS_FORWARDER=true`
 - DNS static records include `localhost` and `citm.internal` to `127.0.0.1`.
 - If `CITM_DNS_NETWORK` is unset, discovery falls back to `CITM_NETWORK`.
 - If `MOCK_PATHS` is unset, mock responder remains disabled.
@@ -56,6 +64,7 @@ services:
       - CITM_NETWORK=my-citm-network
       - CADDY_ADMIN_PORT=29058
       - MITMPROXY_HTTP_PROXY_PORT=29080
+      - ENABLE_SUPERVISOR_WEBUI=false
       - CITM_DNS_CACHE_TTL_SECONDS=1.0
       - MOCK_PATHS=/citm-mocks/**/*.mako
 ```
@@ -72,4 +81,5 @@ labels:
   starting `supervisord`.
 - Invalid numeric DNS environment values: value is ignored and defaults are
   used.
+- Invalid `ENABLE_*` values: value is ignored and the service remains enabled.
 - Missing or invalid labels: service is excluded from discovery results.

@@ -25,5 +25,5 @@ smoke:
     set -euo pipefail
     export http_proxy=http://127.0.0.1:8380
     export https_proxy=http://127.0.0.1:8380
-    just _check-status "https://utils.citm.internal:${CADDY_ADMIN_PORT:-19058}" "200"
+    just _check-status "https://utils.citm.internal:${CADDY_ADMIN_PORT:-63858}" "200"
     just _check-status "http://whoami.internal" "200"

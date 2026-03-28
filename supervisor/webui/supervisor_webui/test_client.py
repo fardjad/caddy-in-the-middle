@@ -58,7 +58,7 @@ def _server_with_processes(
     return SimpleNamespace(supervisor=api), api
 
 
-def test_list_services_filters_webui_and_one_shot_processes():
+def test_list_services_filters_webui_only():
     server, _api = _server_with_processes(
         [
             {
@@ -83,10 +83,15 @@ def test_list_services_filters_webui_and_one_shot_processes():
 
     assert services == [
         {
+            "name": "caddy-reload",
+            "state": "STOPPED",
+            "description": "manual",
+        },
+        {
             "name": "citm-utils-web",
             "state": "RUNNING",
             "description": "serving",
-        }
+        },
     ]
 
 
