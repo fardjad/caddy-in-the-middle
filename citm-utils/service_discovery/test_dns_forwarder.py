@@ -203,6 +203,45 @@ def test_configure_local_resolver_skips_override_on_non_default_port(tmp_path, c
     assert "not listening on port 53" in capsys.readouterr().out
 
 
+def test_parse_upstream_nameservers_env_returns_none_when_unset(monkeypatch):
+    monkeypatch.delenv(dns_forwarder.ENV_UPSTREAM_NAMESERVERS, raising=False)
+
+    assert (
+        dns_forwarder._parse_upstream_nameservers_env(
+            dns_forwarder.ENV_UPSTREAM_NAMESERVERS
+        )
+        is None
+    )
+
+
+def test_parse_upstream_nameservers_env_accepts_comma_and_space_delimiters(
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        dns_forwarder.ENV_UPSTREAM_NAMESERVERS,
+        "1.1.1.1, 8.8.8.8 2001:4860:4860::8888",
+    )
+
+    assert dns_forwarder._parse_upstream_nameservers_env(
+        dns_forwarder.ENV_UPSTREAM_NAMESERVERS
+    ) == ["1.1.1.1", "8.8.8.8", "2001:4860:4860::8888"]
+
+
+def test_parse_upstream_nameservers_env_ignores_invalid_entries(monkeypatch, capsys):
+    monkeypatch.setenv(
+        dns_forwarder.ENV_UPSTREAM_NAMESERVERS,
+        "1.1.1.1, not-an-ip, 8.8.8.8",
+    )
+
+    assert dns_forwarder._parse_upstream_nameservers_env(
+        dns_forwarder.ENV_UPSTREAM_NAMESERVERS
+    ) == ["1.1.1.1", "8.8.8.8"]
+    assert (
+        "Invalid CITM_DNS_UPSTREAM_NAMESERVERS entry 'not-an-ip'"
+        in capsys.readouterr().out
+    )
+
+
 def test_resolve_returns_empty_bytes_for_invalid_request(monkeypatch):
     forwarder = _make_forwarder(monkeypatch)
     assert forwarder.resolve(b"invalid-packet", via_tcp=False) == b""

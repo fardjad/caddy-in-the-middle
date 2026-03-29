@@ -22,6 +22,8 @@ variables consumed by `Dockerfile`, `caddy`, `citm-utils`, and
 - `CITM_DNS_LISTEN_HOST`: DNS forwarder bind host.
 - `CITM_DNS_LISTEN_PORT`: positive integer DNS forwarder port. See
   [Default Ports](default-ports.md).
+- `CITM_DNS_UPSTREAM_NAMESERVERS`: optional explicit upstream DNS override. Use
+  a comma-separated or space-separated list of IP addresses.
 - `CITM_DNS_UPSTREAM_TIMEOUT_SECONDS`: positive float timeout for upstream DNS.
 - `ENABLE_CADDY`: `true`, `false`, `1`, or `0`.
 - `ENABLE_MITMPROXY`: `true`, `false`, `1`, or `0`.
@@ -49,6 +51,8 @@ variables consumed by `Dockerfile`, `caddy`, `citm-utils`, and
 - `ENABLE_CITM_UTILS_DNS_FORWARDER=true`
 - DNS static records include `localhost` and `citm.internal` to `127.0.0.1`.
 - If `CITM_DNS_NETWORK` is unset, discovery falls back to `CITM_NETWORK`.
+- If `CITM_DNS_UPSTREAM_NAMESERVERS` is unset, upstream nameservers are read
+  from `/etc/resolv.conf`.
 - If `MOCK_PATHS` is unset, mock responder remains disabled.
 - `SUPERVISOR_SOCKET` defaults to `/var/run/supervisor.sock`.
 - ProxyLens Server stores data in the fixed container path `/var/lib/proxylens`.
@@ -70,6 +74,7 @@ services:
       - ENABLE_PROXYLENS_SERVER=true
       - ENABLE_SUPERVISOR_WEBUI=false
       - CITM_DNS_CACHE_TTL_SECONDS=1.0
+      - CITM_DNS_UPSTREAM_NAMESERVERS=1.1.1.1,8.8.8.8
       - MOCK_PATHS=/citm-mocks/**/*.mako
 ```
 
@@ -85,5 +90,6 @@ labels:
   starting `supervisord`.
 - Invalid numeric DNS environment values: value is ignored and defaults are
   used.
+- Invalid `CITM_DNS_UPSTREAM_NAMESERVERS` entries: invalid IPs are ignored.
 - Invalid `ENABLE_*` values: value is ignored and the service remains enabled.
 - Missing or invalid labels: service is excluded from discovery results.

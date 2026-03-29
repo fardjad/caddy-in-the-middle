@@ -19,6 +19,7 @@ from .discovery import DnsRecordSet, get_citm_dns_record_sets
 ENV_CACHE_TTL_SECONDS = "CITM_DNS_CACHE_TTL_SECONDS"
 ENV_LISTEN_HOST = "CITM_DNS_LISTEN_HOST"
 ENV_LISTEN_PORT = "CITM_DNS_LISTEN_PORT"
+ENV_UPSTREAM_NAMESERVERS = "CITM_DNS_UPSTREAM_NAMESERVERS"
 ENV_UPSTREAM_TIMEOUT_SECONDS = "CITM_DNS_UPSTREAM_TIMEOUT_SECONDS"
 ENV_DISCOVERY_NETWORK = "CITM_DNS_NETWORK"
 
@@ -162,6 +163,29 @@ def _to_int_env(name: str, default: int) -> int:
     except ValueError:
         print(f"Invalid {name}={raw!r}. Falling back to {default}.", flush=True)
         return default
+
+
+def _parse_upstream_nameservers_env(name: str) -> list[str] | None:
+    raw = os.getenv(name)
+    if raw is None:
+        return None
+
+    nameservers: list[str] = []
+    for part in raw.replace(",", " ").split():
+        candidate = part.strip()
+        if not candidate:
+            continue
+        try:
+            ipaddress.ip_address(candidate)
+        except ValueError:
+            print(
+                f"Invalid {name} entry {candidate!r}. Ignoring it.",
+                flush=True,
+            )
+            continue
+        nameservers.append(candidate)
+
+    return nameservers
 
 
 @dataclass(frozen=True)
@@ -436,14 +460,31 @@ def main() -> None:
 
     docker_client = docker.from_env()
     resolv_manager = ResolvConfManager()
-    upstream_nameservers = resolv_manager.get_upstream_nameservers()
-
-    if not upstream_nameservers:
-        print(
-            "No upstream nameservers found in /etc/resolv.conf. "
-            "Unmatched DNS queries will return SERVFAIL.",
-            flush=True,
-        )
+    upstream_nameservers_override = _parse_upstream_nameservers_env(
+        ENV_UPSTREAM_NAMESERVERS
+    )
+    if upstream_nameservers_override is not None:
+        upstream_nameservers = upstream_nameservers_override
+        if upstream_nameservers:
+            print(
+                f"Using {ENV_UPSTREAM_NAMESERVERS} override: "
+                f"{', '.join(upstream_nameservers)}",
+                flush=True,
+            )
+        else:
+            print(
+                f"{ENV_UPSTREAM_NAMESERVERS} is set but did not contain any valid "
+                "nameservers. Unmatched DNS queries will return SERVFAIL.",
+                flush=True,
+            )
+    else:
+        upstream_nameservers = resolv_manager.get_upstream_nameservers()
+        if not upstream_nameservers:
+            print(
+                "No upstream nameservers found in /etc/resolv.conf. "
+                "Unmatched DNS queries will return SERVFAIL.",
+                flush=True,
+            )
 
     configure_local_resolver(resolv_manager, listen_port=listen_port)
     atexit.register(resolv_manager.restore)

@@ -3,7 +3,9 @@
 ## Context
 
 CITM resolves service names from Docker labels and forwards unmatched DNS
-queries to upstream nameservers.
+queries to upstream nameservers. By default those upstream nameservers are read
+from `/etc/resolv.conf`. `CITM_DNS_UPSTREAM_NAMESERVERS` can override that
+selection explicitly.
 
 ## Mechanics
 
@@ -30,6 +32,8 @@ flowchart TD
 - Label-based discovery removes manual DNS record maintenance.
 - Short cache windows keep container IP changes visible quickly.
 - Upstream forwarding preserves normal DNS behavior for non-CITM domains.
+- Explicit upstream override allows deterministic forwarding when the container
+  resolver state is incomplete or unsuitable.
 
 ## Tradeoffs
 

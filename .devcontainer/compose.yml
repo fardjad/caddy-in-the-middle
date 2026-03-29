@@ -30,6 +30,7 @@ services:
       - DOCKER_HOST=tcp://localhost:2375
       - CITM_NETWORK=citm-example
       - ENABLE_PROXYLENS_SERVER=true
+      - CITM_DNS_UPSTREAM_NAMESERVERS=1.1.1.1
 
     ports:
       # BEGIN GENERATED EXPOSED PORTS
