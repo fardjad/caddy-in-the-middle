@@ -23,7 +23,6 @@ services:
     volumes:
       - vscode-server-data:/home/dev/.vscode-server
       - ../shared-certificates/certs:/certs:ro
-      - ../example/gw/caddy-conf.d:/etc/caddy/conf.d:ro
       - ../caddy/Caddyfile:/etc/caddy/Caddyfile
       - ..:/workspace:cached
     environment:
