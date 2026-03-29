@@ -8,7 +8,7 @@ These rules define required constraints for standalone mitmproxy addon scripts.
 
 ## 1. Project Boundary
 
-- The `mitmproxy/` directory is a standalone Python project.
+- The `mitmproxy/mitm-scripts/` directory is a standalone Python project.
 - Mitmproxy addon tests must not be placed inside `citm-utils/`.
 - Mitmproxy addon changes must not be coupled to `citm-utils` refactors unless
   explicitly requested.
@@ -18,7 +18,8 @@ These rules define required constraints for standalone mitmproxy addon scripts.
 - Addon tests must be co-located with the module they validate.
 - A top-level `mitmproxy/tests/` directory must not be introduced for addon
   tests.
-- Pytest discovery in `mitmproxy/pyproject.toml` must target addon module paths.
+- Pytest discovery in `mitmproxy/mitm-scripts/pyproject.toml` must target addon
+  module paths.
 
 ## 3. Addon Integration Test Standards
 
@@ -49,6 +50,7 @@ These rules define required constraints for standalone mitmproxy addon scripts.
 
 ## 5. Command Workflow
 
-- `mitmproxy/justfile` must provide a `test` recipe that runs `uv run pytest`.
-- Root `just test` must execute mitmproxy tests from the `mitmproxy/` working
-  directory.
+- `mitmproxy/mitm-scripts/justfile` must provide a `test` recipe that runs
+  `uv run pytest`.
+- Root `just test` must execute mitmproxy tests from the
+  `mitmproxy/mitm-scripts/` working directory.

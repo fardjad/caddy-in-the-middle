@@ -12,9 +12,12 @@ DNS_LISTEN_PORT="${CITM_DNS_LISTEN_PORT:-53}"
 cat /certs/rootCA-key.pem /certs/rootCA.pem >/root/.mitmproxy/mitmproxy-ca.pem
 chmod -R 644 /root/.mitmproxy/*
 
-SCRIPT_ARGS="-s /mock-responder.py -s /rewrite-host.py"
+SCRIPT_ARGS=""
+
 if [ -d "/mitm-scripts" ]; then
-	SCRIPT_ARGS+=" $(ls /mitm-scripts/*.py | sort | awk '{print "-s "$1}')"
+	while IFS= read -r script; do
+		SCRIPT_ARGS+=" -s ${script}"
+	done < <(find /mitm-scripts -maxdepth 1 -type f -name "*.py" | sort)
 fi
 
 mkdir -p /mitm-dump
@@ -27,7 +30,7 @@ else
 	echo "WARNING: CITM DNS forwarder is configured for port ${DNS_LISTEN_PORT}. mitmproxy will use the system resolver instead of CITM DNS interception." >&2
 fi
 
-mitmweb \
+uv run mitmweb \
 	--mode regular@"${HTTP_PROXY_PORT}" \
 	--mode socks5@"${SOCKS_PROXY_PORT}" \
 	-w /mitm-dump/dump.flow \

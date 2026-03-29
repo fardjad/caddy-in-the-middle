@@ -13,10 +13,8 @@ and structural constraints for the project.
 The primary artifact shipped by this project is a multi-stage Docker/OCI image.
 
 - **Final Layer Context**: The `FROM` instruction in the final stage is based on
-  `mitmproxy/mitmproxy`, meaning the final operating environment is **Debian
-  Linux**. Modifications to the Dockerfile require the use of the appropriate
-  package manager and tools. For example for Debian use `apt-get`, and for
-  Alpine use `apk`.
+  a Debian Linux image. Modifications to the Dockerfile must use the Debian
+  package manager and tools. Use `apt-get` for package installation.
 - **Devcontainers Context**: This project supports development in devcontainers
   which can be enabled by a build flag. Enabling the flag will install some
   additional tools by running `.devcontainer/setup-devenv.sh`. Any new tools

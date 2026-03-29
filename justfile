@@ -126,7 +126,7 @@ test:
 
     echo "Running mitmproxy script tests"
     (
-        cd mitmproxy
+        cd mitmproxy/mitm-scripts
         just test
     )
 

@@ -58,3 +58,5 @@ flowchart LR
 - Certificate files must be mounted before startup.
 - Service discovery contracts depend on exact Docker labels.
 - Health checks cover Docker access, DNS resolution, and internal routing.
+- `mitmproxy` runs under a PTY wrapper in `supervisord`. This preserves
+  `mitmweb` log output on container stdout and stderr.

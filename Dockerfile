@@ -17,7 +17,7 @@ if [ "${DEVCONTAINER}" = "false" ]; then
 fi
 EOF
 
-FROM mitmproxy/mitmproxy
+FROM debian:trixie
 
 # BEGIN GENERATED DEFAULT PORT ENV
 ENV CADDY_HTTP_PORT=80 \
@@ -35,7 +35,7 @@ ENV CITM_DNS_LISTEN_HOST=0.0.0.0
 # Common tools
 RUN <<EOF
 apt-get update -y
-apt-get install -y socat curl iputils-ping ca-certificates
+apt-get install -y bash ca-certificates curl iputils-ping socat supervisor util-linux
 EOF
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
@@ -50,9 +50,6 @@ RUN rm -rf .venv __pycache__ && uv sync
 
 # Supervisord
 RUN <<EOF
-apt-get update -y
-apt-get install -y supervisor
-
 rm -rf /etc/supervisor
 mkdir -p /var/log/supervisor
 mkdir -p /var/run
@@ -72,15 +69,13 @@ COPY supervisor/conf.d/caddy.conf /etc/supervisor/conf.d/caddy.conf
 
 # MITM Proxy
 RUN mkdir -p /root/.mitmproxy
+COPY ./mitmproxy/mitm-scripts /mitm-scripts
+WORKDIR /mitm-scripts
+RUN rm -rf .venv __pycache__ && uv sync
 COPY --chown=root:root --chmod=755 ./mitmproxy/start-mitmproxy.sh /usr/local/bin/start-mitmproxy
-COPY ./mitmproxy/rewrite-host.py /rewrite-host.py
-COPY ./mitmproxy/mock-responder.py /mock-responder.py
-COPY ./mitmproxy/rewrite_host /rewrite_host
-COPY ./mitmproxy/mock_responder /mock_responder
 COPY supervisor/conf.d/mitmproxy.conf /etc/supervisor/conf.d/mitmproxy.conf
 
 # CITM Utils
-RUN uv pip install --system mako
 COPY citm-utils /citm-utils
 WORKDIR /citm-utils
 RUN rm -rf .venv __pycache__ && uv sync
