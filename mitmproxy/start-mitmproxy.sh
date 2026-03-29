@@ -44,5 +44,6 @@ uv run mitmweb \
 	--set connection_strategy=lazy \
 	--set keep_host_header=true \
 	--set dns_use_hosts_file=false \
+	--set stream_large_bodies=1 \
 	"${DNS_ARGS[@]}" \
 	${SCRIPT_ARGS}
