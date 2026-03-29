@@ -45,7 +45,7 @@ ls -l dump.har
 head -n 5 dump.har
 ```
 
-Expected result: valid HAR JSON generated from `/mitm-dump/dump.flow`.
+Expected result: valid HAR JSON generated from `/var/lib/mitmproxy/dump.flow`.
 
 ## Troubleshooting
 

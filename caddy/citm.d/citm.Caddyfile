@@ -45,5 +45,29 @@ https://citm.internal:{$CADDY_ADMIN_PORT}, https://*.citm.internal:{$CADDY_ADMIN
 		}
 	}
 
+	@proxylens `{host}.startsWith("proxylens.citm.")`
+	handle @proxylens {
+		route {
+			handle_path /api/* {
+				reverse_proxy {
+					to 127.0.0.1:{$PROXYLENS_SERVER_PORT}
+
+					transport http {
+						network_proxy none
+					}
+				}
+			}
+
+			@runtime_config path /runtime-config.js
+			header @runtime_config Cache-Control "no-store"
+
+			handle {
+				root * /proxy-lens/ui
+				try_files {path} /index.html
+				file_server
+			}
+		}
+	}
+
 	respond "Unknown service" 404
 }

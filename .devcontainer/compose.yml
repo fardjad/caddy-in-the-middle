@@ -29,6 +29,7 @@ services:
     environment:
       - DOCKER_HOST=tcp://localhost:2375
       - CITM_NETWORK=citm-example
+      - ENABLE_PROXYLENS_SERVER=true
 
     ports:
       # BEGIN GENERATED EXPOSED PORTS
@@ -40,6 +41,7 @@ services:
       - '0.0.0.0:${MITMPROXY_HTTP_PROXY_PORT:-19080}:19080'
       - '0.0.0.0:${MITMPROXY_SOCKS_PROXY_PORT:-19081}:19081'
       - '0.0.0.0:${MITMPROXY_WEB_PORT:-19082}:19082'
+      - '0.0.0.0:${PROXYLENS_SERVER_PORT:-19003}:19003'
       - '0.0.0.0:${SUPERVISOR_WEBUI_PORT:-19001}:19001'
       # END GENERATED EXPOSED PORTS
     networks:

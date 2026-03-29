@@ -67,6 +67,13 @@ PORTS = (
         "Supervisor UI listener",
     ),
     Port(
+        "PROXYLENS_SERVER_PORT",
+        19003,
+        "Internal",
+        "proxylens-server",
+        "ProxyLens API listener",
+    ),
+    Port(
         "CITM_DNS_LISTEN_PORT",
         53,
         "Internal",
@@ -290,6 +297,7 @@ def render_devcontainer_ports_block() -> str:
         f'- \'0.0.0.0:${{MITMPROXY_HTTP_PROXY_PORT:-{PORT_BY_ENV["MITMPROXY_HTTP_PROXY_PORT"].default}}}:{PORT_BY_ENV["MITMPROXY_HTTP_PROXY_PORT"].default}\'',
         f'- \'0.0.0.0:${{MITMPROXY_SOCKS_PROXY_PORT:-{PORT_BY_ENV["MITMPROXY_SOCKS_PROXY_PORT"].default}}}:{PORT_BY_ENV["MITMPROXY_SOCKS_PROXY_PORT"].default}\'',
         f'- \'0.0.0.0:${{MITMPROXY_WEB_PORT:-{PORT_BY_ENV["MITMPROXY_WEB_PORT"].default}}}:{PORT_BY_ENV["MITMPROXY_WEB_PORT"].default}\'',
+        f'- \'0.0.0.0:${{PROXYLENS_SERVER_PORT:-{PORT_BY_ENV["PROXYLENS_SERVER_PORT"].default}}}:{PORT_BY_ENV["PROXYLENS_SERVER_PORT"].default}\'',
         f'- \'0.0.0.0:${{SUPERVISOR_WEBUI_PORT:-{PORT_BY_ENV["SUPERVISOR_WEBUI_PORT"].default}}}:{PORT_BY_ENV["SUPERVISOR_WEBUI_PORT"].default}\'',
     ]
     return "\n".join(f"      {line}" for line in lines)

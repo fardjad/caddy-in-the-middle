@@ -28,9 +28,13 @@ ENV CADDY_HTTP_PORT=80 \
     MITMPROXY_WEB_PORT=19082 \
     CITM_UTILS_WEB_PORT=19000 \
     SUPERVISOR_WEBUI_PORT=19001 \
+    PROXYLENS_SERVER_PORT=19003 \
     CITM_DNS_LISTEN_PORT=53
 # END GENERATED DEFAULT PORT ENV
+
 ENV CITM_DNS_LISTEN_HOST=0.0.0.0
+ENV MITMPROXY_DATA_DIR=/var/lib/mitmproxy
+ENV PROXYLENS_SERVER_DATA_DIR=/var/lib/proxylens
 
 # Common tools
 RUN <<EOF
@@ -69,11 +73,24 @@ COPY supervisor/conf.d/caddy.conf /etc/supervisor/conf.d/caddy.conf
 
 # MITM Proxy
 RUN mkdir -p /root/.mitmproxy
+RUN mkdir -p "${MITMPROXY_DATA_DIR}"
 COPY ./mitmproxy/mitm-scripts /mitm-scripts
 WORKDIR /mitm-scripts
 RUN rm -rf .venv __pycache__ && uv sync
+VOLUME ["/var/lib/mitmproxy"]
 COPY --chown=root:root --chmod=755 ./mitmproxy/start-mitmproxy.sh /usr/local/bin/start-mitmproxy
 COPY supervisor/conf.d/mitmproxy.conf /etc/supervisor/conf.d/mitmproxy.conf
+
+# ProxyLens Server
+COPY --from=docker.io/fardjad/proxylens:0.4.2 /proxy-lens /proxy-lens
+WORKDIR /proxy-lens/server
+RUN rm -rf .venv __pycache__ && uv sync --no-dev
+RUN uv add --no-sync gunicorn
+RUN uv sync --no-dev
+RUN mkdir -p "${PROXYLENS_SERVER_DATA_DIR}"
+VOLUME ["/var/lib/proxylens"]
+COPY --chmod=755 ./proxylens/start-proxylens-server.sh /usr/local/bin/start-proxylens-server
+COPY supervisor/conf.d/proxylens-server.conf /etc/supervisor/conf.d/proxylens-server.conf
 
 # CITM Utils
 COPY citm-utils /citm-utils

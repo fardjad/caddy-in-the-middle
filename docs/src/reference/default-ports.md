@@ -20,6 +20,8 @@ is `hack/update_default_ports.py`.
   listener.
 - `SUPERVISOR_WEBUI_PORT=19001`: Internal port for `supervisor-webui`.
   Supervisor UI listener.
+- `PROXYLENS_SERVER_PORT=19003`: Internal port for `proxylens-server`. ProxyLens
+  API listener.
 - `CITM_DNS_LISTEN_PORT=53`: Internal port for `citm-utils-dns-forwarder`. DNS
   listener.
 

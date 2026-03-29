@@ -25,6 +25,7 @@ variables consumed by `Dockerfile`, `caddy`, `citm-utils`, and
 - `CITM_DNS_UPSTREAM_TIMEOUT_SECONDS`: positive float timeout for upstream DNS.
 - `ENABLE_CADDY`: `true`, `false`, `1`, or `0`.
 - `ENABLE_MITMPROXY`: `true`, `false`, `1`, or `0`.
+- `ENABLE_PROXYLENS_SERVER`: `true`, `false`, `1`, or `0`.
 - `ENABLE_SUPERVISOR_WEBUI`: `true`, `false`, `1`, or `0`.
 - `ENABLE_CITM_UTILS_DNS_FORWARDER`: `true`, `false`, `1`, or `0`.
 - `MOCK_PATHS`: comma-separated file patterns for mock templates.
@@ -43,12 +44,14 @@ variables consumed by `Dockerfile`, `caddy`, `citm-utils`, and
 - `CITM_DNS_UPSTREAM_TIMEOUT_SECONDS=2.0`
 - `ENABLE_CADDY=true`
 - `ENABLE_MITMPROXY=true`
+- `ENABLE_PROXYLENS_SERVER=false`
 - `ENABLE_SUPERVISOR_WEBUI=true`
 - `ENABLE_CITM_UTILS_DNS_FORWARDER=true`
 - DNS static records include `localhost` and `citm.internal` to `127.0.0.1`.
 - If `CITM_DNS_NETWORK` is unset, discovery falls back to `CITM_NETWORK`.
 - If `MOCK_PATHS` is unset, mock responder remains disabled.
 - `SUPERVISOR_SOCKET` defaults to `/var/run/supervisor.sock`.
+- ProxyLens Server stores data in the fixed container path `/var/lib/proxylens`.
 
 ## Examples
 
@@ -64,6 +67,7 @@ services:
       - CITM_NETWORK=my-citm-network
       - CADDY_ADMIN_PORT=29058
       - MITMPROXY_HTTP_PROXY_PORT=29080
+      - ENABLE_PROXYLENS_SERVER=true
       - ENABLE_SUPERVISOR_WEBUI=false
       - CITM_DNS_CACHE_TTL_SECONDS=1.0
       - MOCK_PATHS=/citm-mocks/**/*.mako

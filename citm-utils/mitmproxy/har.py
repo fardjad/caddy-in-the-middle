@@ -2,9 +2,10 @@ import fcntl
 import subprocess
 from collections.abc import Callable, Sequence
 
-HAR_LOCK_PATH = "/mitm-dump/har.lock"
-MITM_FLOW_PATH = "/mitm-dump/dump.flow"
-HAR_OUTPUT_PATH = "/mitm-dump/dump.har"
+MITMPROXY_DATA_DIR = "/var/lib/mitmproxy"
+HAR_LOCK_PATH = f"{MITMPROXY_DATA_DIR}/har.lock"
+MITM_FLOW_PATH = f"{MITMPROXY_DATA_DIR}/dump.flow"
+HAR_OUTPUT_PATH = f"{MITMPROXY_DATA_DIR}/dump.har"
 
 
 class HarGenerationInProgressError(Exception):

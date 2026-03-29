@@ -21,11 +21,15 @@ update-ca-certificates
 
 is_enabled() {
 	local env_name="$1"
+	local default_when_unset="${2:-enabled}"
 	local value="${!env_name:-}"
 
 	case "${value,,}" in
 	"" | "1" | "true")
-		return 0
+		if [ -n "${value}" ] || [ "${default_when_unset}" = "enabled" ]; then
+			return 0
+		fi
+		return 1
 		;;
 	"0" | "false")
 		return 1
@@ -41,8 +45,9 @@ copy_if_enabled() {
 	local env_name="$1"
 	local source_file="$2"
 	local target_name="$3"
+	local default_when_unset="${4:-enabled}"
 
-	if is_enabled "${env_name}"; then
+	if is_enabled "${env_name}" "${default_when_unset}"; then
 		cp "${source_file}" "${ENABLED_CONF_DIR}/${target_name}"
 		return
 	fi
@@ -55,6 +60,11 @@ find "${ENABLED_CONF_DIR}" -type f -name "*.conf" -delete
 
 copy_if_enabled "ENABLE_CADDY" "${SOURCE_CONF_DIR}/caddy.conf" "caddy.conf"
 copy_if_enabled "ENABLE_MITMPROXY" "${SOURCE_CONF_DIR}/mitmproxy.conf" "mitmproxy.conf"
+copy_if_enabled \
+	"ENABLE_PROXYLENS_SERVER" \
+	"${SOURCE_CONF_DIR}/proxylens-server.conf" \
+	"proxylens-server.conf" \
+	"disabled"
 copy_if_enabled "ENABLE_SUPERVISOR_WEBUI" "${SOURCE_CONF_DIR}/webui.conf" "webui.conf"
 cp "${SOURCE_CONF_DIR}/citm-utils-web.conf" "${ENABLED_CONF_DIR}/citm-utils-web.conf"
 copy_if_enabled \

@@ -2,7 +2,9 @@ from proxylens.addon import (
     CitmProxyLens,
     DEFAULT_MAX_CONCURRENT_REQUESTS_PER_HOST_ENV_VAR,
     DEFAULT_PROXYLENS_SERVER_BASE_URL_ENV_VAR,
+    ENABLE_PROXYLENS_SERVER_ENV_VAR,
     PROXYLENS_NODE_NAME_ENV_VAR,
+    PROXYLENS_SERVER_PORT_ENV_VAR,
 )
 from proxylens_mitmproxy import ProxyLens
 
@@ -45,3 +47,23 @@ def test_citm_proxylens_re_exports_upstream_env_var_names() -> None:
         DEFAULT_MAX_CONCURRENT_REQUESTS_PER_HOST_ENV_VAR
         == "PROXYLENS_MAX_CONCURRENT_REQUESTS_PER_HOST"
     )
+
+
+def test_citm_proxylens_defaults_to_local_server_when_enabled(monkeypatch) -> None:
+    monkeypatch.delenv(DEFAULT_PROXYLENS_SERVER_BASE_URL_ENV_VAR, raising=False)
+    monkeypatch.setenv(ENABLE_PROXYLENS_SERVER_ENV_VAR, "true")
+    monkeypatch.setenv(PROXYLENS_SERVER_PORT_ENV_VAR, "19003")
+
+    addon = CitmProxyLens(node_name="proxy-a")
+
+    assert addon._client is not None
+    assert addon._client.base_url == "http://127.0.0.1:19003"
+
+
+def test_citm_proxylens_stays_disabled_without_server_when_unset(monkeypatch) -> None:
+    monkeypatch.delenv(DEFAULT_PROXYLENS_SERVER_BASE_URL_ENV_VAR, raising=False)
+    monkeypatch.delenv(ENABLE_PROXYLENS_SERVER_ENV_VAR, raising=False)
+
+    addon = CitmProxyLens(node_name="proxy-a")
+
+    assert addon._client is None

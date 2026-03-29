@@ -13,7 +13,8 @@ documented in [Default Ports](default-ports.md).
 1. Path `/` with method `GET` returns request metadata and `dns_entries`.
 1. Path `/health` with method `GET` runs docker, DNS, and internal service
    checks.
-1. Path `/har` with method `GET` generates HAR from `/mitm-dump/dump.flow`.
+1. Path `/har` with method `GET` generates HAR from
+   `/var/lib/mitmproxy/dump.flow`.
 1. Path `/` with method `GET` on `supervisor.citm.*` returns supervisor UI HTML.
 1. Path `/api/services` with method `GET` on `supervisor.citm.*` returns managed
    process list.
@@ -39,7 +40,7 @@ documented in [Default Ports](default-ports.md).
 1. Health check expects `https://mitm.citm.internal:${CADDY_ADMIN_PORT}` to
    return `200`.
 1. Disabled checks are reported as skipped and do not fail `/health`.
-1. HAR output path is `/mitm-dump/dump.har`.
+1. HAR output path is `/var/lib/mitmproxy/dump.har`.
 
 ## Examples
 

@@ -12,6 +12,7 @@ The container starts `supervisord`, which launches these processes:
 
 - `caddy`: ingress and admin virtual-host routing
 - `mitmproxy` (`mitmweb`): HTTP/S proxying and flow capture
+- `proxylens-server`: ProxyLens API storage and query service
 - `citm-utils-web`: utility HTTP APIs
 - `supervisor-webui`: supervisor UI and control API
 - `citm-utils-dns-forwarder`: DNS interception for the entire container
@@ -26,6 +27,7 @@ Default values for the runtime ports are documented in
 flowchart LR
     Client[Client] --> Caddy["Caddy CADDY_HTTP_PORT/CADDY_HTTPS_PORT/CADDY_ADMIN_PORT"]
     Caddy --> Mitm["mitmproxy MITMPROXY_HTTP_PROXY_PORT/MITMPROXY_SOCKS_PROXY_PORT"]
+    Caddy --> ProxyLens["proxylens-server PROXYLENS_SERVER_PORT"]
     Caddy --> Utils["citm-utils-web CITM_UTILS_WEB_PORT"]
     Caddy --> Supervisor["supervisor-webui SUPERVISOR_WEBUI_PORT"]
     Mitm --> Apps[Target Services]
@@ -60,3 +62,5 @@ flowchart LR
 - Health checks cover Docker access, DNS resolution, and internal routing.
 - `mitmproxy` runs under a PTY wrapper in `supervisord`. This preserves
   `mitmweb` log output on container stdout and stderr.
+- `proxylens-server` is disabled by default and starts only when
+  `ENABLE_PROXYLENS_SERVER=true`.
