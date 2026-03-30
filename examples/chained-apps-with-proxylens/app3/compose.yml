@@ -1,0 +1,35 @@
+name: citm-examples-chained-apps-with-proxylens-app3
+
+services:
+  app3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: "service:citm-sidecar-app3"
+    init: true
+    tty: true
+  citm-sidecar-app3:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../certs:/certs:ro
+      - ./caddy-conf.d:/etc/caddy/conf.d:ro
+    environment:
+      - CITM_NETWORK=my-citm-network
+      - PROXYLENS_NODE_NAME=app3
+      - PROXYLENS_SERVER_BASE_URL=http://proxylens-server.internal:19003
+      - PROXYLENS_MAX_CONCURRENT_REQUESTS_PER_HOST=1
+    networks:
+      - my-citm-network
+    labels:
+      - citm_network=my-citm-network
+      - citm_dns_names=app3.internal
+    init: true
+    tty: true
+
+networks:
+  my-citm-network:
+    name: my-citm-network
+    external: true

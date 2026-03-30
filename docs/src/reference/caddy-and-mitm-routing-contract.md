@@ -20,7 +20,9 @@ uses request headers to route the upstream target and mark flows.
 
 1. Missing `X-MITM-To` means request target is not rewritten.
 1. Missing `X-MITM-Emoji` means no flow mark is applied.
-1. The original host header is preserved before upstream rewrite.
+1. `rewrite_host` rewrites the upstream socket target, request host and port,
+   and TLS SNI to the `X-MITM-To` target.
+1. The original host header is preserved separately for protocol compatibility.
 
 ## Examples
 
@@ -41,5 +43,7 @@ whoami.localhost {
 
 1. Invalid `X-MITM-To` causes request blocking in `rewrite_host`.
 1. Blocked requests are marked with warning metadata and an error comment.
+1. If the rewritten upstream target cannot be resolved or reached, mitmproxy
+   returns `502 Bad Gateway`.
 1. Unknown `*.citm.*` utility hosts in the CITM-owned Caddy config return HTTP
    `404`.

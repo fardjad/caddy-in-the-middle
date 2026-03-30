@@ -13,8 +13,9 @@ CITM uses two mitmproxy addons for programmable behavior:
 
 - Reads `X-MITM-To` and validates `host:port`.
 - Marks flows when `X-MITM-Emoji` is provided.
-- Rewrites request host and port for upstream forwarding.
-- Preserves original host header for protocol compatibility.
+- Rewrites the upstream socket target, request host and port, and TLS SNI to the
+  target host.
+- Preserves the original host header separately for protocol compatibility.
 
 `mock_responder` mechanics:
 

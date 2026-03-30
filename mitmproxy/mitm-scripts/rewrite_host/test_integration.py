@@ -32,7 +32,8 @@ def test_request_rewrites_host_and_preserves_authority(http_version: str):
 
     assert flow.request.host == "backend.internal"
     assert flow.request.port == 8443
-    assert flow.server_conn.sni == "public.example"
+    assert flow.server_conn.address == ("backend.internal", 8443)
+    assert flow.server_conn.sni == "backend.internal"
     assert flow.request.host_header == "public.example:443"
     assert flow.marked == ":rocket:"
     assert flow.comment == "Rewriting host public.example -> backend.internal:8443"

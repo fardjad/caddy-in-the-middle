@@ -13,10 +13,12 @@ test: (_check-tools "uv")
     #!/usr/bin/env bash
     set -euo pipefail
     just --justfile ../../justfile build
+    unset VIRTUAL_ENV
     uv run pytest
 
 publish: (_check-tools "uv")
     #!/usr/bin/env bash
     set -euo pipefail
+    unset VIRTUAL_ENV
     uv build
     uv publish

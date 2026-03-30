@@ -1,0 +1,30 @@
+name: citm-examples-chained-apps-with-proxylens-gateway
+
+services:
+  citm:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../certs:/certs:ro
+      - ./caddy-conf.d:/etc/caddy/conf.d:ro
+    environment:
+      - CITM_NETWORK=my-citm-network
+      - ENABLE_PROXYLENS_SERVER=true
+      - PROXYLENS_NODE_NAME=gateway
+      - PROXYLENS_MAX_CONCURRENT_REQUESTS_PER_HOST=1
+    ports:
+      - '0.0.0.0:80:80'
+      - '0.0.0.0:443:443'
+      - '0.0.0.0:443:443/udp'
+    networks:
+      - my-citm-network
+    labels:
+      - citm_network=my-citm-network
+      - citm_dns_names=gateway.internal,proxylens-server.internal
+
+networks:
+  my-citm-network:
+    name: my-citm-network
+    external: true

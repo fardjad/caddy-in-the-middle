@@ -12,7 +12,8 @@ Gateway ingress flow:
 1. Client connects to Caddy on `80` or `443`.
 1. Site block forwards to `mitm` upstream.
 1. Request includes `X-MITM-To` target and optional `X-MITM-Emoji` marker.
-1. `rewrite_host` validates and rewrites upstream host/port.
+1. `rewrite_host` validates the target and rewrites the upstream socket target,
+   request host/port, and TLS SNI.
 1. `mock_responder` checks exact and wildcard mock rules.
 1. On match, `mock_responder` returns a synthetic response.
 1. On miss, mitmproxy forwards request to target service.

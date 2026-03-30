@@ -12,4 +12,5 @@ _check-tools *args:
 test: (_check-tools "uv")
     #!/usr/bin/env bash
     set -euo pipefail
+    unset VIRTUAL_ENV
     uv run pytest

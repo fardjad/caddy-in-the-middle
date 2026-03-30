@@ -224,7 +224,7 @@ dev = [
 requires-dist = [
     { name = "mako", specifier = ">=1.3.10" },
     { name = "mitmproxy", specifier = ">=11.0.0" },
-    { name = "proxylens-mitmproxy", specifier = "==0.4.2" },
+    { name = "proxylens-mitmproxy", specifier = "==0.4.3" },
 ]
 
 [package.metadata.requires-dev]
@@ -579,16 +579,16 @@ wheels = [
 
 [[package]]
 name = "proxylens-mitmproxy"
-version = "0.4.2"
+version = "0.4.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mitmproxy" },
     { name = "python-ulid" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/32/d8/bc5617bd60dc9e4b7af41c2aea48778cf54768433ba61a313e477857c6d9/proxylens_mitmproxy-0.4.2.tar.gz", hash = "sha256:a6fcccff16730859477ecc91c2158347953a9947e7940dc121b644e753f8a79d", size = 29628, upload-time = "2026-03-29T06:02:38.38Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/66/55/dc3e6727cdb86b24819939a33180fd323056ab093c358ace1a7eea5b5328/proxylens_mitmproxy-0.4.3.tar.gz", hash = "sha256:5febaa73f8b365546360f3e9439fdb245e8f43646534205d58a7a4c5567d5a35", size = 30849, upload-time = "2026-03-29T22:08:08.937Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ec/65/2f86caf87f9fe246ab30880986d636559314a4cd818ab4f77194c60a59b8/proxylens_mitmproxy-0.4.2-py3-none-any.whl", hash = "sha256:ff2ffbdc1461abca8867fd5c1ff9641d67a64afd7b2c67d329db6e945b52994c", size = 22457, upload-time = "2026-03-29T06:02:37.288Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/3a/04417660fe636482ee5d3c86e3e93212cfbf909dd5ef73f8fa3cdba9964d/proxylens_mitmproxy-0.4.3-py3-none-any.whl", hash = "sha256:40f0f3ff2a927244267a991b74ddf328cd98d9a33cdef056a248cec56e7c2ced", size = 23248, upload-time = "2026-03-29T22:08:07.907Z" },
 ]
 
 [[package]]

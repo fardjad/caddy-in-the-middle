@@ -4,7 +4,8 @@ Caddy in the Middle (CITM) is a containerized toolkit for configuring,
 inspecting, and debugging HTTP(S) communication in distributed systems.
 
 CITM combines TLS termination, proxying, DNS service discovery, traffic
-inspection, and endpoint mocking in one container image.
+inspection, endpoint mocking, and cross-service request tracking in one
+container image.
 
 ______________________________________________________________________
 
@@ -14,8 +15,11 @@ ______________________________________________________________________
   local domains through Caddy internal PKI.
 - **Traffic Inspection and Routing**: Uses embedded `mitmproxy` for inspection,
   host rewrite routing, and protocol-aware flow handling.
-- **Programmable Endpoint Mocking**: Supports file-based Mako mock templates
-  loaded through `MOCK_PATHS`.
+- **Cross-Service Request Tracking**: Collects request and response events
+  across gateways and sidecars, correlates multi-hop traffic, and supports
+  sequence-style tracing when services propagate trace headers.
+- **Programmable Endpoint Mocking**: Supports file-based mock responses for
+  controlled backend behavior during development and testing.
 - **Container-Native Service Discovery**: Builds DNS records from Docker labels
   (`citm_network`, `citm_dns_names`).
 - **Test Suite Integration**: Provides Testcontainers integrations for Python

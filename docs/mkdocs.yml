@@ -32,6 +32,7 @@ nav:
     - Gateway and Sidecars: tutorials/gateway-and-sidecars.md
     - HTTP Proxy and DNS Forwarder: tutorials/http-proxy-and-dns-forwarder.md
     - Mocking: tutorials/mocking.md
+    - ProxyLens: tutorials/chained-apps-with-proxylens.md
   - How-To Guides:
     - Configure Caddy Layers: how-to/configure-caddy.md
     - Inspect Traffic and Export HAR: how-to/inspect-traffic-and-export-har.md

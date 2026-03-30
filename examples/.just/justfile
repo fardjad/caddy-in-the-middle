@@ -76,7 +76,11 @@ _clear-project-containers:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    mapfile -t container_ids < <(docker ps -aq --filter "label=com.docker.compose.project")
+    container_ids=()
+    while IFS= read -r container_id; do
+        [[ -n "${container_id}" ]] || continue
+        container_ids+=("${container_id}")
+    done < <(docker ps -aq --filter "label=com.docker.compose.project")
     if (( ${#container_ids[@]} == 0 )); then
         exit 0
     fi
@@ -99,7 +103,7 @@ _check-status url expected:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    deadline=$(( $(date +%s) + 300 ))
+    deadline=$(( $(date +%s) + 10 ))
     attempt=0
     last_code="000"
 

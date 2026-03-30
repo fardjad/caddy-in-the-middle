@@ -90,6 +90,7 @@ format-markdown *args: (_check-tools "uv")
     #!/usr/bin/env bash
 
     set -euo pipefail
+    unset VIRTUAL_ENV
     uv tool run mdformat --wrap 80 {{ args }} $(find . -maxdepth 5 -type f -name '*.md' -not -path "*/.venv/*" -not -path "*/.git/*" -not -path "*/site/*" -not -path "*/docs/site/*")
 
 check-markdown:
@@ -115,12 +116,14 @@ test:
     echo "Running supervisor web UI tests"
     (
         cd supervisor/webui
+        unset VIRTUAL_ENV
         uv run pytest
     )
 
     echo "Running citm-utils tests"
     (
         cd citm-utils
+        unset VIRTUAL_ENV
         uv run pytest
     )
 
@@ -156,6 +159,7 @@ install-git-hooks: (_check-tools "uv")
     #!/usr/bin/env bash
 
     set -euo pipefail
+    unset VIRTUAL_ENV
     uv tool run pre-commit install
 
 publish-testcontainers-python:
@@ -190,12 +194,14 @@ docs-serve: (_check-tools "uv")
     #!/usr/bin/env bash
     set -euo pipefail
     cd docs
+    unset VIRTUAL_ENV
     uv run zensical serve
 
 docs-build: (_check-tools "uv")
     #!/usr/bin/env bash
     set -euo pipefail
     cd docs
+    unset VIRTUAL_ENV
     uv run zensical build
 
 build:

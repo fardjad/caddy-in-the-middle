@@ -1,0 +1,129 @@
+import '../.just/justfile'
+
+# show available recipes
+help:
+    @just --list
+
+up: _clear-project-containers _ensure-network (_ensure-certs "certs")
+    (cd gateway && docker compose up -d --wait --pull always --build --force-recreate)
+    (cd app3 && docker compose up -d --wait --pull always --build --force-recreate)
+    (cd app2 && docker compose up -d --wait --pull always --build --force-recreate)
+    (cd app1 && docker compose up -d --wait --pull always --build --force-recreate)
+
+down:
+    (cd app1 && docker compose down)
+    (cd app2 && docker compose down)
+    (cd app3 && docker compose down)
+    (cd gateway && docker compose down)
+
+restart: down up
+
+ps:
+    (cd gateway && docker compose ps)
+    (cd app1 && docker compose ps)
+    (cd app2 && docker compose ps)
+    (cd app3 && docker compose ps)
+
+logs-gateway:
+    (cd gateway && docker compose logs -f citm)
+
+logs-app1:
+    (cd app1 && docker compose logs -f citm-sidecar-app1 app1)
+
+logs-app2:
+    (cd app2 && docker compose logs -f citm-sidecar-app2 app2)
+
+logs-app3:
+    (cd app3 && docker compose logs -f citm-sidecar-app3 app3)
+
+smoke: (_check-status "https://app1.localhost" "200") _check-proxylens-trace
+
+_check-proxylens-trace:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    deadline=$(( $(date +%s) + 10 ))
+    attempt=0
+    url="https://proxylens.citm.localhost/api/requests?limit=100"
+
+    while true; do
+        attempt=$((attempt + 1))
+        payload="$(curl -k -sS "${url}")"
+
+        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] ProxyLens poll attempt ${attempt}" >&2
+        printf '%s' "${payload}" | just _describe-proxylens-payload >&2
+
+        if printf '%s' "${payload}" | just _payload-has-full-proxylens-trace; then
+            echo "ProxyLens smoke check passed on attempt ${attempt}" >&2
+            exit 0
+        fi
+
+        if (( $(date +%s) >= deadline )); then
+            echo "ProxyLens smoke check failed: missing trace across gateway, app1, app2, and app3" >&2
+            echo "${payload}" >&2
+            just _dump-smoke-debug >&2
+            exit 1
+        fi
+
+        sleep 2
+    done
+
+_payload-has-full-proxylens-trace:
+    #!/usr/bin/env python3
+    import json
+    import sys
+
+    required_nodes = {"gateway", "app1", "app2", "app3"}
+    payload = json.load(sys.stdin)
+
+    has_matching_trace = any(
+        required_nodes.issubset(set(request.get("hop_nodes") or []))
+        and (request.get("hop_nodes") or []) != ["gateway"]
+        for request in payload.get("requests", [])
+    )
+
+    raise SystemExit(0 if has_matching_trace else 1)
+
+_describe-proxylens-payload:
+    #!/usr/bin/env python3
+    import json
+    import sys
+
+    payload = json.load(sys.stdin)
+    requests = payload.get("requests", [])
+
+    def format_hops(request: dict[str, object]) -> str:
+        hop_nodes = request.get("hop_nodes") or []
+        return "->".join(hop_nodes) if hop_nodes else "<no-hop-nodes>"
+
+    unique_hops = []
+    for request in requests:
+        hop_summary = format_hops(request)
+        if hop_summary not in unique_hops:
+            unique_hops.append(hop_summary)
+
+    summary = ", ".join(unique_hops[:5]) if unique_hops else "<no-requests>"
+    print(f"ProxyLens saw {len(requests)} requests; hop paths: {summary}")
+
+_dump-smoke-debug:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "Container status:" 
+    just ps
+
+    echo
+    echo "Gateway logs:"
+    (cd gateway && docker compose logs --tail=50 citm)
+
+    echo
+    echo "App1 logs:"
+    (cd app1 && docker compose logs --tail=50 citm-sidecar-app1 app1)
+
+    echo
+    echo "App2 logs:"
+    (cd app2 && docker compose logs --tail=50 citm-sidecar-app2 app2)
+
+    echo
+    echo "App3 logs:"
+    (cd app3 && docker compose logs --tail=50 citm-sidecar-app3 app3)

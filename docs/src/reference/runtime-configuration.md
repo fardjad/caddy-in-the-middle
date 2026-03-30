@@ -28,6 +28,14 @@ variables consumed by `Dockerfile`, `caddy`, `citm-utils`, and
 - `ENABLE_CADDY`: `true`, `false`, `1`, or `0`.
 - `ENABLE_MITMPROXY`: `true`, `false`, `1`, or `0`.
 - `ENABLE_PROXYLENS_SERVER`: `true`, `false`, `1`, or `0`.
+- `PROXYLENS_NODE_NAME`: explicit ProxyLens node name for the local mitmproxy
+  process. If unset, CITM defaults to the container hostname.
+- `PROXYLENS_SERVER_BASE_URL`: explicit ProxyLens server base URL for the local
+  mitmproxy process. If unset, CITM defaults to
+  `http://127.0.0.1:${PROXYLENS_SERVER_PORT}` only when
+  `ENABLE_PROXYLENS_SERVER=true`. Otherwise the addon remains disabled.
+- `PROXYLENS_MAX_CONCURRENT_REQUESTS_PER_HOST`: optional positive integer
+  concurrency limit per destination host for the local ProxyLens addon.
 - `ENABLE_SUPERVISOR_WEBUI`: `true`, `false`, `1`, or `0`.
 - `ENABLE_CITM_UTILS_DNS_FORWARDER`: `true`, `false`, `1`, or `0`.
 - `MOCK_PATHS`: comma-separated file patterns for mock templates.
@@ -47,6 +55,10 @@ variables consumed by `Dockerfile`, `caddy`, `citm-utils`, and
 - `ENABLE_CADDY=true`
 - `ENABLE_MITMPROXY=true`
 - `ENABLE_PROXYLENS_SERVER=false`
+- `PROXYLENS_NODE_NAME=<container-hostname>`
+- `PROXYLENS_SERVER_BASE_URL` is unset unless provided or derived from
+  `ENABLE_PROXYLENS_SERVER=true`
+- `PROXYLENS_MAX_CONCURRENT_REQUESTS_PER_HOST` is unset
 - `ENABLE_SUPERVISOR_WEBUI=true`
 - `ENABLE_CITM_UTILS_DNS_FORWARDER=true`
 - DNS static records include `localhost` and `citm.internal` to `127.0.0.1`.
@@ -72,6 +84,9 @@ services:
       - CADDY_ADMIN_PORT=29058
       - MITMPROXY_HTTP_PROXY_PORT=29080
       - ENABLE_PROXYLENS_SERVER=true
+      - PROXYLENS_NODE_NAME=gateway
+      - PROXYLENS_SERVER_BASE_URL=http://proxylens-server.internal:19003
+      - PROXYLENS_MAX_CONCURRENT_REQUESTS_PER_HOST=1
       - ENABLE_SUPERVISOR_WEBUI=false
       - CITM_DNS_CACHE_TTL_SECONDS=1.0
       - CITM_DNS_UPSTREAM_NAMESERVERS=1.1.1.1,8.8.8.8
@@ -92,4 +107,6 @@ labels:
   used.
 - Invalid `CITM_DNS_UPSTREAM_NAMESERVERS` entries: invalid IPs are ignored.
 - Invalid `ENABLE_*` values: value is ignored and the service remains enabled.
+- Invalid `PROXYLENS_MAX_CONCURRENT_REQUESTS_PER_HOST`: startup fails in the
+  local mitmproxy process.
 - Missing or invalid labels: service is excluded from discovery results.

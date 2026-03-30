@@ -1,0 +1,49 @@
+name: citm-examples-chained-apps-with-proxylens-app1
+
+services:
+  app1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../certs:/certs:ro
+    environment:
+      - SERVICE2_BASE_URL=https://app2.internal/
+      # Node.js proxy support:
+      # https://nodejs.org/en/learn/http/enterprise-network-configuration
+      # Enable built-in proxy support so fetch() sends outbound requests
+      # through the local CITM sidecar listener.
+      - HTTP_PROXY=http://127.0.0.1:19080
+      - HTTPS_PROXY=http://127.0.0.1:19080
+      - NODE_USE_ENV_PROXY=1
+      # Trust the CITM root CA so Node accepts TLS certificates for
+      # intercepted internal HTTPS traffic.
+      - NODE_EXTRA_CA_CERTS=/certs/rootCA.pem
+    network_mode: "service:citm-sidecar-app1"
+    init: true
+    tty: true
+  citm-sidecar-app1:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../certs:/certs:ro
+      - ./caddy-conf.d:/etc/caddy/conf.d:ro
+    environment:
+      - CITM_NETWORK=my-citm-network
+      - PROXYLENS_NODE_NAME=app1
+      - PROXYLENS_SERVER_BASE_URL=http://proxylens-server.internal:19003
+      - PROXYLENS_MAX_CONCURRENT_REQUESTS_PER_HOST=1
+    networks:
+      - my-citm-network
+    labels:
+      - citm_network=my-citm-network
+      - citm_dns_names=app1.internal
+    init: true
+    tty: true
+
+networks:
+  my-citm-network:
+    name: my-citm-network
+    external: true

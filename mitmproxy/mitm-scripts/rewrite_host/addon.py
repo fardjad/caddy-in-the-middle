@@ -56,7 +56,8 @@ class RewriteHost:
         pretty_host = flow.request.pretty_host
         flow.comment = f"Rewriting host {pretty_host} -> {target}"
 
-        flow.server_conn.sni = pretty_host
+        flow.server_conn.address = (target_host, target_port)
+        flow.server_conn.sni = target_host
 
         preserved_host_header = f"{pretty_host}:{flow.request.port}"
         flow.request.host = target_host

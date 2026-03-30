@@ -82,7 +82,7 @@ COPY --chown=root:root --chmod=755 ./mitmproxy/start-mitmproxy.sh /usr/local/bin
 COPY supervisor/conf.d/mitmproxy.conf /etc/supervisor/conf.d/mitmproxy.conf
 
 # ProxyLens Server
-COPY --from=docker.io/fardjad/proxylens:0.4.2 /proxy-lens /proxy-lens
+COPY --from=docker.io/fardjad/proxylens:0.4.3 /proxy-lens /proxy-lens
 WORKDIR /proxy-lens/server
 RUN rm -rf .venv __pycache__ && uv sync --no-dev
 RUN uv add --no-sync gunicorn
