@@ -2,14 +2,12 @@ FROM node:lts-trixie
 
 WORKDIR /app
 
-COPY package.json /app/package.json
-COPY package-lock.json /app/package-lock.json
+COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY app.js /app/app.js
-COPY config.js /app/config.js
-COPY otel.js /app/otel.js
+COPY index.mjs ./
+COPY telemetry.mjs ./
 
 EXPOSE 8080
 
-CMD ["node", "/app/app.js"]
+CMD ["node", "--import=/app/telemetry.mjs", "/app/index.mjs"]

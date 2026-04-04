@@ -10,13 +10,18 @@ services:
       # the container trust store for intercepted internal HTTPS traffic.
       - ../certs:/certs:ro
     environment:
-      - SERVICE3_BASE_URL=https://app3.internal/
+      # OTEL
+      - OTEL_SERVICE_NAME=app2
+
       # .NET proxy environment variables:
       # https://learn.microsoft.com/en-us/dotnet/api/system.net.http.httpclient.defaultproxy
       # HttpClient uses these variables so outbound requests go through the
       # local CITM sidecar listener.
       - HTTP_PROXY=http://127.0.0.1:19080
       - HTTPS_PROXY=http://127.0.0.1:19080
+
+      # Application configuration
+      - SERVICE3_BASE_URL=https://app3.internal/
     network_mode: "service:citm-sidecar-app2"
     init: true
     tty: true

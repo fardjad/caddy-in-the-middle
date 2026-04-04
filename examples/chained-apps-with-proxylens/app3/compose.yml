@@ -5,6 +5,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      # OTEL
+      - OTEL_SERVICE_NAME=app3
+      - OTEL_TRACES_EXPORTER=console
+      - OTEL_METRICS_EXPORTER=console
+      - OTEL_LOGS_EXPORTER=console
     network_mode: "service:citm-sidecar-app3"
     init: true
     tty: true

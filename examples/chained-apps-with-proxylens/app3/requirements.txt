@@ -1,4 +1,0 @@
-Flask
-opentelemetry-api
-opentelemetry-sdk
-opentelemetry-instrumentation-flask

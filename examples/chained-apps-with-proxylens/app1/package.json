@@ -1,17 +1,19 @@
 {
-  "name": "citm-chained-apps-with-proxylens-app1",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@opentelemetry/context-async-hooks": "^2.2.0",
-    "@opentelemetry/core": "^2.2.0",
-    "@opentelemetry/instrumentation": "^0.214.0",
-    "@opentelemetry/instrumentation-fastify": "^0.57.0",
-    "@opentelemetry/instrumentation-http": "^0.214.0",
-    "@opentelemetry/instrumentation-undici": "^0.24.0",
-    "@opentelemetry/resources": "^2.2.0",
-    "@opentelemetry/sdk-trace-node": "^2.2.0",
-    "@opentelemetry/semantic-conventions": "^1.38.0",
-    "fastify": "^5.6.1"
-  }
+	"name": "citm-chained-apps-with-proxylens-app1",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"style:fix": "biome check --write",
+		"style:check": "biome check"
+	},
+	"dependencies": {
+		"@fastify/otel": "^0.18.0",
+		"@opentelemetry/api": "^1.9.1",
+		"@opentelemetry/auto-instrumentations-node": "^0.72.0",
+		"@opentelemetry/instrumentation": "^0.214.0",
+		"fastify": "^5.6.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.10"
+	}
 }

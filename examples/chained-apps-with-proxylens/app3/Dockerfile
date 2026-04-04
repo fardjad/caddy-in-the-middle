@@ -5,11 +5,13 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+COPY pyproject.toml uv.lock /app/
+RUN uv sync --frozen
 
 COPY app.py /app/app.py
 
 EXPOSE 8080
 
-CMD ["python", "/app/app.py"]
+CMD ["uv", "run", "opentelemetry-instrument", "python", "/app/app.py"]

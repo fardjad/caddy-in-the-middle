@@ -1,15 +1,13 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-const string AppName = "app2";
-const string ListenUrl = "http://0.0.0.0:8080";
-
-var service3BaseUrl = GetRequiredEnvironmentVariable("SERVICE3_BASE_URL");
+var serviceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME") ?? "app2";
+var service3BaseUrl = Environment.GetEnvironmentVariable("SERVICE3_BASE_URL")
+    ?? "https://app3.internal/";
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls(ListenUrl);
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 builder.Services.AddHttpClient("downstream", client =>
 {
@@ -20,7 +18,6 @@ builder.Services.AddHttpClient("downstream", client =>
 
 builder.Services
     .AddOpenTelemetry()
-    .ConfigureResource(resource => resource.AddService(AppName))
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation());
@@ -40,8 +37,8 @@ app.MapGet("/", async (HttpContext context, IHttpClientFactory httpClientFactory
 
         return Results.Json(new
         {
-            service = AppName,
-            message = $"{AppName} called app3",
+            service = serviceName,
+            message = $"{serviceName} called app3",
             downstream,
         });
     }
@@ -49,16 +46,10 @@ app.MapGet("/", async (HttpContext context, IHttpClientFactory httpClientFactory
     {
         return Results.Json(new
         {
-            service = AppName,
+            service = serviceName,
             error = $"downstream request failed: {exception.Message}",
         }, statusCode: StatusCodes.Status502BadGateway);
     }
 });
 
 await app.RunAsync();
-
-return;
-
-static string GetRequiredEnvironmentVariable(string name) =>
-    Environment.GetEnvironmentVariable(name)
-    ?? throw new InvalidOperationException($"{name} is required");

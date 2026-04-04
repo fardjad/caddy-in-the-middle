@@ -200,12 +200,28 @@ services:
     volumes:
       - ../certs:/certs:ro
     environment:
-      - SERVICE2_BASE_URL=https://app2.internal/
+      # OTEL
+      - OTEL_SERVICE_NAME=app1
+      - OTEL_TRACES_EXPORTER=console
+      - OTEL_METRICS_EXPORTER=console
+      - OTEL_LOGS_EXPORTER=console
+
+      # Node.js proxy support:
+      # https://nodejs.org/en/learn/http/enterprise-network-configuration
+      # Enable built-in proxy support so fetch() sends outbound requests
+      # through the local CITM sidecar listener.
       - HTTP_PROXY=http://127.0.0.1:19080
       - HTTPS_PROXY=http://127.0.0.1:19080
       - NODE_USE_ENV_PROXY=1
+      # Trust the CITM root CA so Node accepts TLS certificates for
+      # intercepted internal HTTPS traffic.
       - NODE_EXTRA_CA_CERTS=/certs/rootCA.pem
+
+      # Application configuration
+      - SERVICE2_BASE_URL=https://app2.internal/
     network_mode: "service:citm-sidecar-app1"
+    init: true
+    tty: true
 
   citm-sidecar-app1:
     image: fardjad/citm:latest
@@ -223,6 +239,8 @@ services:
     labels:
       - citm_network=my-citm-network
       - citm_dns_names=app1.internal
+    init: true
+    tty: true
 
 networks:
   my-citm-network:
@@ -253,116 +271,66 @@ FROM node:lts-trixie
 
 WORKDIR /app
 
-COPY package.json /app/package.json
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
-COPY app.js /app/app.js
-COPY config.js /app/config.js
-COPY otel.js /app/otel.js
+COPY index.mjs ./
+COPY telemetry.mjs ./
 
 EXPOSE 8080
 
-CMD ["node", "/app/app.js"]
+CMD ["node", "--import=/app/telemetry.mjs", "/app/index.mjs"]
 ```
 
 Install the Node dependencies for `app1`:
 
 ```bash
 npm install \
+  @fastify/otel \
+  @opentelemetry/api \
+  @opentelemetry/auto-instrumentations-node \
   fastify \
-  @opentelemetry/context-async-hooks \
-  @opentelemetry/core \
   @opentelemetry/instrumentation \
-  @opentelemetry/instrumentation-fastify \
-  @opentelemetry/instrumentation-http \
-  @opentelemetry/instrumentation-undici \
-  @opentelemetry/resources \
-  @opentelemetry/sdk-trace-node \
-  @opentelemetry/semantic-conventions
+  @opentelemetry/sdk-node
 ```
 
-File: `examples/chained-apps-with-proxylens/app1/config.js`
+File: `examples/chained-apps-with-proxylens/app1/telemetry.mjs`
+
+```js
+import { register } from "node:module";
+import { pathToFileURL } from "node:url";
+import { FastifyOtelInstrumentation } from "@fastify/otel";
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import { NodeSDK } from "@opentelemetry/sdk-node";
+
+register("@opentelemetry/instrumentation/hook.mjs", pathToFileURL("./"));
+
+const sdk = new NodeSDK({
+  instrumentations: [
+    getNodeAutoInstrumentations(),
+    new FastifyOtelInstrumentation({ registerOnInitialization: true })
+  ]
+});
+
+sdk.start();
+```
+
+File: `examples/chained-apps-with-proxylens/app1/index.mjs`
 
 ```js
 import process from "node:process";
+import Fastify from "fastify";
 
-const requiredEnv = (name) => {
-  const value = process.env[name];
+const HOST = process.env.HOST ?? "0.0.0.0";
+const PORT = Number(process.env.PORT ?? "8080");
+const serviceName = process.env.OTEL_SERVICE_NAME ?? "app1";
+const service2BaseUrl = process.env.SERVICE2_BASE_URL;
 
-  if (!value) {
-    throw new Error(`${name} is required`);
-  }
-
-  return value;
-};
-
-export const appConfig = {
-  bind: "0.0.0.0",
-  port: 8080,
-  serviceName: "app1",
-  app2BaseUrl: requiredEnv("SERVICE2_BASE_URL"),
-};
-```
-
-File: `examples/chained-apps-with-proxylens/app1/otel.js`
-
-```js
-import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
-import {
-  CompositePropagator,
-  W3CBaggagePropagator,
-  W3CTraceContextPropagator
-} from "@opentelemetry/core";
-import { registerInstrumentations } from "@opentelemetry/instrumentation";
-import { FastifyInstrumentation } from "@opentelemetry/instrumentation-fastify";
-import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
-import { UndiciInstrumentation } from "@opentelemetry/instrumentation-undici";
-import { resourceFromAttributes } from "@opentelemetry/resources";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
-
-import { appConfig } from "./config.js";
-
-export const startOpenTelemetry = () => {
-  const provider = new NodeTracerProvider({
-    resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: appConfig.serviceName
-    })
-  });
-
-  provider.register({
-    contextManager: new AsyncLocalStorageContextManager(),
-    propagator: new CompositePropagator({
-      propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()]
-    })
-  });
-
-  registerInstrumentations({
-    instrumentations: [
-      new HttpInstrumentation(),
-      new FastifyInstrumentation(),
-      new UndiciInstrumentation()
-    ]
-  });
-};
-```
-
-File: `examples/chained-apps-with-proxylens/app1/app.js`
-
-```js
-import process from "node:process";
-
-import { appConfig } from "./config.js";
-import { startOpenTelemetry } from "./otel.js";
-
-startOpenTelemetry();
-
-const { default: Fastify } = await import("fastify");
-const app = Fastify({ logger: false });
+const app = Fastify({ logger: true });
 
 app.get("/", async (_req, reply) => {
   try {
-    const response = await fetch(appConfig.app2BaseUrl, {
+    const response = await fetch(service2BaseUrl, {
       method: "GET",
       headers: { accept: "application/json" },
       signal: AbortSignal.timeout(10_000)
@@ -373,25 +341,20 @@ app.get("/", async (_req, reply) => {
     }
 
     return {
-      service: appConfig.serviceName,
-      message: `${appConfig.serviceName} called app2`,
+      service: serviceName,
+      message: `${serviceName} called app2`,
       downstream: await response.json()
     };
   } catch (error) {
     reply.code(502);
     return {
-      service: appConfig.serviceName,
+      service: serviceName,
       error: `downstream request failed: ${error.message}`
     };
   }
 });
 
-try {
-  await app.listen({ host: appConfig.bind, port: appConfig.port });
-} catch (error) {
-  app.log.error(error);
-  process.exit(1);
-}
+await app.listen({ host: HOST, port: PORT });
 ```
 
 ### app2 Stack
@@ -410,12 +373,25 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
+      # Mount the shared CITM root CA so the entrypoint can install it into
+      # the container trust store for intercepted internal HTTPS traffic.
       - ../certs:/certs:ro
     environment:
-      - SERVICE3_BASE_URL=https://app3.internal/
+      # OTEL
+      - OTEL_SERVICE_NAME=app2
+
+      # .NET proxy support:
+      # https://learn.microsoft.com/en-us/dotnet/api/system.net.http.httpclient.defaultproxy
+      # HttpClient uses these variables so outbound requests go through the
+      # local CITM sidecar listener.
       - HTTP_PROXY=http://127.0.0.1:19080
       - HTTPS_PROXY=http://127.0.0.1:19080
+
+      # Application configuration
+      - SERVICE3_BASE_URL=https://app3.internal/
     network_mode: "service:citm-sidecar-app2"
+    init: true
+    tty: true
 
   citm-sidecar-app2:
     image: fardjad/citm:latest
@@ -433,6 +409,8 @@ services:
     labels:
       - citm_network=my-citm-network
       - citm_dns_names=app2.internal
+    init: true
+    tty: true
 
 networks:
   my-citm-network:
@@ -514,16 +492,14 @@ File: `examples/chained-apps-with-proxylens/app2/Program.cs`
 ```csharp
 using System.Net.Http.Headers;
 using System.Text.Json;
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-const string AppName = "app2";
-const string ListenUrl = "http://0.0.0.0:8080";
-
-var service3BaseUrl = GetRequiredEnvironmentVariable("SERVICE3_BASE_URL");
+var serviceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME") ?? "app2";
+var service3BaseUrl = Environment.GetEnvironmentVariable("SERVICE3_BASE_URL")
+    ?? "https://app3.internal/";
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls(ListenUrl);
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 builder.Services.AddHttpClient("downstream", client =>
 {
@@ -534,7 +510,6 @@ builder.Services.AddHttpClient("downstream", client =>
 
 builder.Services
     .AddOpenTelemetry()
-    .ConfigureResource(resource => resource.AddService(AppName))
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation());
@@ -554,8 +529,8 @@ app.MapGet("/", async (HttpContext context, IHttpClientFactory httpClientFactory
 
         return Results.Json(new
         {
-            service = AppName,
-            message = $"{AppName} called app3",
+            service = serviceName,
+            message = $"{serviceName} called app3",
             downstream,
         });
     }
@@ -563,19 +538,13 @@ app.MapGet("/", async (HttpContext context, IHttpClientFactory httpClientFactory
     {
         return Results.Json(new
         {
-            service = AppName,
+            service = serviceName,
             error = $"downstream request failed: {exception.Message}",
         }, statusCode: StatusCodes.Status502BadGateway);
     }
 });
 
 await app.RunAsync();
-
-return;
-
-static string GetRequiredEnvironmentVariable(string name) =>
-    Environment.GetEnvironmentVariable(name)
-    ?? throw new InvalidOperationException($"{name} is required");
 ```
 
 ### app3 Stack
@@ -593,7 +562,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      # OTEL
+      - OTEL_SERVICE_NAME=app3
+      - OTEL_TRACES_EXPORTER=console
+      - OTEL_METRICS_EXPORTER=console
+      - OTEL_LOGS_EXPORTER=console
     network_mode: "service:citm-sidecar-app3"
+    init: true
+    tty: true
 
   citm-sidecar-app3:
     image: fardjad/citm:latest
@@ -611,6 +588,8 @@ services:
     labels:
       - citm_network=my-citm-network
       - citm_dns_names=app3.internal
+    init: true
+    tty: true
 
 networks:
   my-citm-network:
@@ -644,61 +623,72 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+COPY pyproject.toml uv.lock /app/
+RUN uv sync --frozen
 
 COPY app.py /app/app.py
 
 EXPOSE 8080
 
-CMD ["python", "/app/app.py"]
+CMD ["uv", "run", "opentelemetry-instrument", "python", "/app/app.py"]
 ```
 
-File: `examples/chained-apps-with-proxylens/app3/requirements.txt`
+Initialize the Python dependencies for `app3` with `uv`:
 
-```text
-Flask
-opentelemetry-api
-opentelemetry-sdk
-opentelemetry-instrumentation-flask
+```bash
+uv init --name citm-chained-apps-with-proxylens-app3
+uv add flask opentelemetry-distro
+uv run opentelemetry-bootstrap -a requirements | uv add --requirement -
+uv lock
+```
+
+File: `examples/chained-apps-with-proxylens/app3/pyproject.toml`
+
+```toml
+[project]
+name = "citm-chained-apps-with-proxylens-app3"
+version = "0.1.0"
+description = "Flask app for the chained apps with ProxyLens example"
+requires-python = ">=3.11"
+dependencies = [
+    "flask",
+    "opentelemetry-distro",
+    "opentelemetry-instrumentation-asyncio==0.61b0",
+    "opentelemetry-instrumentation-click==0.61b0",
+    "opentelemetry-instrumentation-dbapi==0.61b0",
+    "opentelemetry-instrumentation-flask==0.61b0",
+    "opentelemetry-instrumentation-jinja2==0.61b0",
+    "opentelemetry-instrumentation-logging==0.61b0",
+    "opentelemetry-instrumentation-sqlite3==0.61b0",
+    "opentelemetry-instrumentation-threading==0.61b0",
+    "opentelemetry-instrumentation-urllib==0.61b0",
+    "opentelemetry-instrumentation-wsgi==0.61b0",
+]
 ```
 
 File: `examples/chained-apps-with-proxylens/app3/app.py`
 
 ```python
-from __future__ import annotations
-
+import os
 from flask import Flask
-from opentelemetry import trace
-from opentelemetry.instrumentation.flask import FlaskInstrumentor
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
 
-APP_BIND = "0.0.0.0"
-APP_PORT = 8080
-APP_NAME = "app3"
+SERVICE_NAME = os.environ.get("OTEL_SERVICE_NAME", "app3")
 
 app = Flask(__name__)
-trace.set_tracer_provider(
-    TracerProvider(resource=Resource.create({"service.name": APP_NAME}))
-)
-FlaskInstrumentor().instrument_app(app)
 
 
 @app.get("/")
-def index() -> tuple[dict[str, object], int]:
+def index():
     return {
-        "service": APP_NAME,
-        "message": f"hello from {APP_NAME}",
+        "service": SERVICE_NAME,
+        "message": f"hello from {SERVICE_NAME}",
     }, 200
 
 
 if __name__ == "__main__":
-    app.run(
-        host=APP_BIND,
-        port=APP_PORT,
-        debug=False,
-    )
+    app.run(host="0.0.0.0", port=8080, debug=False)
 ```
 
 ### Run the Topology

@@ -8,7 +8,12 @@ services:
     volumes:
       - ../certs:/certs:ro
     environment:
-      - SERVICE2_BASE_URL=https://app2.internal/
+      # OTEL
+      - OTEL_SERVICE_NAME=app1
+      - OTEL_TRACES_EXPORTER=console
+      - OTEL_METRICS_EXPORTER=console
+      - OTEL_LOGS_EXPORTER=console
+
       # Node.js proxy support:
       # https://nodejs.org/en/learn/http/enterprise-network-configuration
       # Enable built-in proxy support so fetch() sends outbound requests
@@ -19,6 +24,9 @@ services:
       # Trust the CITM root CA so Node accepts TLS certificates for
       # intercepted internal HTTPS traffic.
       - NODE_EXTRA_CA_CERTS=/certs/rootCA.pem
+
+      # Application configuration
+      - SERVICE2_BASE_URL=https://app2.internal/
     network_mode: "service:citm-sidecar-app1"
     init: true
     tty: true
