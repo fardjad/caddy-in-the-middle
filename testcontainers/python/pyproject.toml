@@ -3,11 +3,11 @@ name = "caddy-in-the-middle"
 version = "0.5.0"
 description = "Testcontainers module for CaddyInTheMiddle"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "testcontainers>=4.0.0",
-    "cryptography>=41.0.0",
-    "requests>=2.31.0",
+    "testcontainers>=4.14.2",
+    "cryptography>=46.0.6",
+    "requests>=2.33.1",
 ]
 
 [build-system]
