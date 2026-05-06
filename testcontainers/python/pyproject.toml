@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "testcontainers>=4.14.2",
-    "cryptography>=46.0.6",
+    "cryptography>=48.0.0",
     "requests>=2.33.1",
 ]
 
@@ -19,5 +19,5 @@ packages = ["caddy_in_the_middle"]
 
 [dependency-groups]
 dev = [
-  "pytest>=7.0.0",
+  "pytest>=9.0.3",
 ]
