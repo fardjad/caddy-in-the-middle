@@ -28,7 +28,7 @@ def test_request_rewrites_host_and_preserves_authority(http_version: str):
     flow.request.headers["X-MITM-To"] = "backend.internal:8443"
     flow.request.headers["X-MITM-Emoji"] = ":rocket:"
 
-    RewriteHost().request(flow)
+    RewriteHost().requestheaders(flow)
 
     assert flow.request.host == "backend.internal"
     assert flow.request.port == 8443
@@ -49,7 +49,7 @@ def test_request_rewrites_host_and_preserves_authority(http_version: str):
 def test_request_without_target_header_is_noop():
     flow = _build_flow("HTTP/1.1")
 
-    RewriteHost().request(flow)
+    RewriteHost().requestheaders(flow)
 
     assert flow.request.host == "public.example"
     assert flow.request.port == 443
@@ -82,7 +82,7 @@ def test_invalid_target_kills_flow_marks_warning_and_logs(
         SimpleNamespace(log=SimpleNamespace(error=captured_errors.append)),
     )
 
-    RewriteHost().request(flow)
+    RewriteHost().requestheaders(flow)
 
     assert flow.error is not None
     assert flow.error.msg == "Connection killed."

@@ -31,7 +31,7 @@ def _parse_target(value: str) -> Tuple[str, int]:
 
 
 class RewriteHost:
-    def request(self, flow) -> None:
+    def requestheaders(self, flow) -> None:
         headers = {k.lower(): v for k, v in flow.request.headers.items()}
         emoji = headers.get("x-mitm-emoji", "")
         target = headers.get("x-mitm-to", "").strip()
