@@ -45,5 +45,6 @@ uv run mitmweb \
 	--set keep_host_header=true \
 	--set dns_use_hosts_file=false \
 	--set stream_large_bodies=1 \
+	--set store_streamed_bodies=true \
 	"${DNS_ARGS[@]}" \
 	${SCRIPT_ARGS}
