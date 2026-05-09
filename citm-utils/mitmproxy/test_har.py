@@ -18,6 +18,11 @@ def test_build_har_command_uses_flow_and_output_paths():
         output_path="/tmp/output.har",
     )
     assert command == [
+        "uv",
+        "tool",
+        "run",
+        "--from",
+        "mitmproxy",
         "mitmdump",
         "-nr",
         "/tmp/input.flow",
@@ -46,6 +51,11 @@ def test_generate_har_runs_runner_and_returns_output_path(tmp_path):
     assert result == str(output_path)
     assert command_calls == [
         [
+            "uv",
+            "tool",
+            "run",
+            "--from",
+            "mitmproxy",
             "mitmdump",
             "-nr",
             str(flow_path),

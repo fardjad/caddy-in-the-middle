@@ -14,6 +14,11 @@ class HarGenerationInProgressError(Exception):
 
 def build_har_command(*, flow_path: str, output_path: str) -> list[str]:
     return [
+        "uv",
+        "tool",
+        "run",
+        "--from",
+        "mitmproxy",
         "mitmdump",
         "-nr",
         flow_path,
