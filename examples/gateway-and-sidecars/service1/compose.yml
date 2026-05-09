@@ -17,6 +17,7 @@ services:
       # Register this service in the CITM network
       - citm_network=my-citm-network
       - citm_dns_names=service1.internal,alt-service1.internal
+    privileged: true
 
   service1:
     image: traefik/whoami

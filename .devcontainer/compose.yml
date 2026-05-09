@@ -57,6 +57,7 @@ services:
     command:
       - TCP-LISTEN:2375,fork,reuseaddr
       - UNIX-CONNECT:/var/run/docker.sock
+    privileged: true
 
 networks:
   citm-example:

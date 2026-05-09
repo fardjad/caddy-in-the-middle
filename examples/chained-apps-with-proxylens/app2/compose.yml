@@ -44,6 +44,7 @@ services:
       - citm_network=my-citm-network
       - citm_dns_names=app2.internal
     init: true
+    privileged: true
     tty: true
 
 networks:

@@ -57,6 +57,7 @@ name: citm-examples-gateway-and-sidecars-gateway
 services:
   citm:
     image: fardjad/citm:latest
+    privileged: true
     networks:
       - my-citm-network
     environment:
@@ -184,6 +185,7 @@ name: citm-examples-gateway-and-sidecars-service1
 services:
   citm-sidecar-service1:
     image: fardjad/citm:latest
+    privileged: true
     networks:
       - my-citm-network
     labels:
@@ -242,6 +244,7 @@ name: citm-examples-gateway-and-sidecars-service2
 services:
   citm-sidecar-service2:
     image: fardjad/citm:latest
+    privileged: true
     networks:
       - my-citm-network
     environment:

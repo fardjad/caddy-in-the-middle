@@ -12,6 +12,7 @@ services:
       - CITM_NETWORK=my-citm-network
     networks:
       - my-citm-network
+    privileged: true
 
   service2:
     image: python:3-alpine

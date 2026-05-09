@@ -33,6 +33,7 @@ services:
       - citm_network=my-citm-network
       - citm_dns_names=app3.internal
     init: true
+    privileged: true
     tty: true
 
 networks:

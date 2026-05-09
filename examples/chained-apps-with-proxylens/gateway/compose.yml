@@ -23,6 +23,7 @@ services:
     labels:
       - citm_network=my-citm-network
       - citm_dns_names=gateway.internal,proxylens-server.internal
+    privileged: true
 
 networks:
   my-citm-network:

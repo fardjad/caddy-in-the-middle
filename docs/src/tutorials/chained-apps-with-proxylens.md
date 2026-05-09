@@ -64,6 +64,7 @@ name: citm-examples-chained-apps-with-proxylens-gateway
 services:
   citm:
     image: fardjad/citm:latest
+    privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../certs:/certs:ro
@@ -225,6 +226,7 @@ services:
 
   citm-sidecar-app1:
     image: fardjad/citm:latest
+    privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../certs:/certs:ro
@@ -395,6 +397,7 @@ services:
 
   citm-sidecar-app2:
     image: fardjad/citm:latest
+    privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../certs:/certs:ro
@@ -574,6 +577,7 @@ services:
 
   citm-sidecar-app3:
     image: fardjad/citm:latest
+    privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../certs:/certs:ro

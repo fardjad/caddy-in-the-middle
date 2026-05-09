@@ -46,6 +46,7 @@ name: citm-examples-mocking
 services:
   citm:
     image: fardjad/citm:latest
+    privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./certs:/certs:ro

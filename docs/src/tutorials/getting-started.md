@@ -49,6 +49,7 @@ name: citm-examples-getting-started
 services:
   citm:
     image: fardjad/citm:latest
+    privileged: true
     volumes:
       # Required for service discovery
       - /var/run/docker.sock:/var/run/docker.sock:ro

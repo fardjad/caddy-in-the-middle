@@ -57,6 +57,7 @@ name: citm-examples-http-proxy-and-dns-forwarder
 services:
   citm:
     image: fardjad/citm:latest
+    privileged: true
     volumes:
       # Required for service discovery
       - /var/run/docker.sock:/var/run/docker.sock:ro
